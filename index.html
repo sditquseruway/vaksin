@@ -1,0 +1,2737 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>E-Vaksinasi Siswa & Santri SD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Library Pembuat PDF Langsung (Unduh & Preview di Tab Baru) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(160deg, #f0fdf4 0%, #fefce8 50%, #f0fdf4 100%);
+            background-attachment: fixed;
+        }
+
+        /* Kotak Elegan dengan Bayangan Hijau & Kuning */
+        .card-green-glow {
+            background: #ffffff;
+            border: 1.5px solid #a7f3d0;
+            box-shadow: 0 12px 28px -6px rgba(16, 185, 129, 0.22), 0 4px 12px -2px rgba(245, 158, 11, 0.12);
+        }
+        .card-yellow-glow {
+            background: #ffffff;
+            border: 1.5px solid #fde68a;
+            box-shadow: 0 12px 28px -6px rgba(245, 158, 11, 0.25), 0 4px 12px -2px rgba(16, 185, 129, 0.10);
+        }
+        .card-dual-glow {
+            background: #ffffff;
+            border: 2px solid #6ee7b7;
+            box-shadow: 0 14px 32px -8px rgba(16, 185, 129, 0.28), 0 6px 20px -4px rgba(250, 204, 21, 0.25);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #ecfdf5; border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #34d399; border-radius: 8px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.25s ease-out forwards; }
+
+        /* Aturan Khusus Cetak Absen Petugas (Print Mode) */
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            #view-absen {
+                display: block !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .print-area-box {
+                box-shadow: none !important;
+                border: 1px solid #000 !important;
+                padding: 0 !important;
+            }
+            table.print-table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+            table.print-table th, table.print-table td {
+                border: 1px solid #1e293b !important;
+                padding: 6px 8px !important;
+                font-size: 11px !important;
+                color: #000 !important;
+            }
+            table.print-table th {
+                background-color: #dcfce7 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col pb-24 sm:pb-8">
+
+    <!-- Header Atas -->
+    <header class="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white sticky top-0 z-30 shadow-lg border-b-2 border-amber-400 no-print">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center space-x-3">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center text-emerald-950 shadow-md shadow-amber-400/30 border border-white/40 shrink-0">
+                    <i class="fa-solid fa-syringe text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-white">E-VAKSIN SANTRI & SISWA SD</h1>
+                        <span class="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold bg-amber-400 text-emerald-950 rounded-full">RESMI UKS</span>
+                    </div>
+                    <p class="text-[11px] sm:text-xs text-emerald-100">Formulir Persetujuan Orang Tua & Absensi Petugas Vaksinasi</p>
+                </div>
+            </div>
+
+            <!-- Navigasi Desktop -->
+            <div class="hidden md:flex items-center bg-emerald-950/50 p-1.5 rounded-2xl border border-emerald-500/40 gap-1">
+                <button onclick="switchTab('parent')" id="tab-parent" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 bg-amber-400 text-emerald-950 shadow-md">
+                    <i class="fa-solid fa-file-signature"></i>
+                    <span>Form Orang Tua</span>
+                </button>
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 text-emerald-100 hover:bg-emerald-800/60">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button onclick="switchTab('absen')" id="tab-absen" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 text-emerald-100 hover:bg-emerald-800/60">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Cetak Absen Petugas</span>
+                </button>
+                <button onclick="switchTab('admin')" id="tab-admin" class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 text-emerald-100 hover:bg-emerald-800/60">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Menu Admin</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Bottom Navigation Bar Khusus HP (Agar sangat mudah dilihat & ditekan di HP) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-emerald-400 shadow-[0_-8px_25px_rgba(16,185,129,0.25)] px-2 py-1.5 flex justify-around items-center no-print">
+        <button onclick="switchTab('parent')" id="mob-tab-parent" class="flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-emerald-900 bg-amber-300/90 font-extrabold text-[11px] shadow-sm transition-all">
+            <i class="fa-solid fa-file-signature text-base mb-0.5"></i>
+            <span>Form Ortu</span>
+        </button>
+        <button onclick="switchTab('dashboard')" id="mob-tab-dashboard" class="flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-slate-600 font-bold text-[11px] transition-all">
+            <i class="fa-solid fa-chart-pie text-base mb-0.5"></i>
+            <span>Dashboard</span>
+        </button>
+        <button onclick="switchTab('absen')" id="mob-tab-absen" class="flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-slate-600 font-bold text-[11px] transition-all">
+            <i class="fa-solid fa-clipboard-user text-base mb-0.5"></i>
+            <span>Cetak Absen</span>
+        </button>
+        <button onclick="switchTab('admin')" id="mob-tab-admin" class="flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-slate-600 font-bold text-[11px] transition-all">
+            <i class="fa-solid fa-sliders text-base mb-0.5"></i>
+            <span>Admin</span>
+        </button>
+    </nav>
+
+    <!-- Bar Status Koneksi Database Induk & Target Kelas -->
+    <div class="bg-amber-100/90 border-b border-amber-300 text-amber-950 text-xs py-2 px-3 sm:px-6 no-print">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <span id="db-indicator" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                <span id="db-status-text" class="font-bold text-[11px] sm:text-xs">Mengambil data siswa dari Spreadsheet Induk (gid=1632329455)...</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="fetchMasterStudentSpreadsheet(true)" class="px-2.5 py-0.5 bg-emerald-700 hover:bg-emerald-800 text-amber-200 rounded-lg font-bold text-[11px] shadow-sm flex items-center gap-1">
+                    <i class="fa-solid fa-rotate"></i> Muat Ulang Database
+                </button>
+                <span id="active-program-badge" class="bg-emerald-700 text-amber-200 border border-emerald-900 px-3 py-0.5 rounded-full text-[11px] font-extrabold shadow-sm">
+                    Kelas Sasaran: 1, 2
+                </span>
+                <button onclick="openDbModal()" class="px-2.5 py-0.5 bg-white hover:bg-amber-50 text-emerald-800 border border-amber-400 rounded-lg font-bold text-[11px] shadow-sm flex items-center gap-1">
+                    <i class="fa-solid fa-link"></i> Sumber Data
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kontainer Utama -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+
+        <!-- ===================================================== -->
+        <!-- VIEW 1: FORM PERSETUJUAN ORANG TUA (MOBILE ELEGANT)   -->
+        <!-- ===================================================== -->
+        <section id="view-parent" class="max-w-3xl mx-auto space-y-5 animate-fade no-print">
+
+            <!-- Kotak Banner Pentingnya Vaksin (Gradasi Hijau & Aksen Emas) -->
+            <div class=" rounded-3xl p-5 sm:p-6 bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-700 text-white shadow-[0_14px_30px_-5px_rgba(16,185,129,0.45)] border-2 border-amber-300 relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 opacity-15 pointer-events-none">
+                    <i class="fa-solid fa-shield-heart text-9xl text-amber-300"></i>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 mb-3">
+                    <span class="px-3 py-1 bg-amber-400 text-emerald-950 rounded-full text-xs font-extrabold uppercase tracking-wide shadow-sm flex items-center gap-1.5">
+                        <i class="fa-solid fa-users-rectangle"></i>
+                        <span id="banner-target-class">Sasaran: Kelas 1, Kelas 2 SD</span>
+                    </span>
+                    <span class="px-3 py-1 bg-emerald-950/50 border border-emerald-400/40 rounded-full text-xs font-semibold text-amber-200 flex items-center gap-1.5">
+                        <i class="fa-regular fa-calendar-check"></i>
+                        <span id="banner-schedule">Jadwal: Sesuai Edaran UKS</span>
+                    </span>
+                </div>
+
+                <h2 class="text-lg sm:text-2xl font-extrabold mb-3 text-white drop-shadow-sm" id="banner-title">
+                    Program Imunisasi & Vaksinasi Kesehatan Siswa SD
+                </h2>
+
+                <!-- Kotak Kuning Keemasan Penjelasan Pentingnya Vaksin -->
+                <div class="bg-amber-50/95 text-slate-800 rounded-2xl p-4 border-2 border-amber-300 shadow-inner">
+                    <div class="font-extrabold text-emerald-900 flex items-center gap-2 mb-1.5 text-xs sm:text-sm">
+                        <span class="w-6 h-6 rounded-lg bg-amber-400 text-emerald-950 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-lightbulb"></i>
+                        </span>
+                        <span>Penjelasan Pentingnya Vaksinasi (Informasi Medis & UKS):</span>
+                    </div>
+                    <p id="banner-importance" class="whitespace-pre-line text-xs sm:text-sm text-slate-700 leading-relaxed font-medium pl-1"></p>
+                </div>
+            </div>
+
+            <!-- Form Utama dengan Kotak-Kotak Bayangan Hijau & Kuning -->
+            <form id="vaccineConsentForm" onsubmit="handleFormSubmit(event)" class="space-y-5">
+
+                <!-- KOTAK 1: PENCARIAN NAMA SISWA OTOMATIS -->
+                <div class="card-dual-glow rounded-3xl p-5 sm:p-6">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded-xl bg-emerald-600 text-amber-300 font-extrabold text-sm flex items-center justify-center shadow-md">1</span>
+                            <label class="text-sm sm:text-base font-extrabold text-emerald-950">
+                                Cari & Klik Nama Siswa / Santri <span class="text-rose-500">*</span>
+                            </label>
+                        </div>
+                        <span id="filter-hint-badge" class="text-[11px] font-extrabold text-emerald-900 bg-amber-200 border border-amber-400 px-3 py-1 rounded-full shadow-sm">
+                            Aktif: Kelas 1, 2 SD
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-600 mb-3 pl-1">
+                        Ketik nama anak Bapak/Ibu di bawah ini, lalu <strong>klik nama yang muncul</strong> agar <strong>NIK, Kelas SD, Nama Ayah, dan Nama Ibu</strong> terisi otomatis.
+                    </p>
+
+                    <div class="relative" id="student-search-wrapper">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 text-base"></i>
+                            <input 
+                                type="text" 
+                                id="studentSearchInput" 
+                                autocomplete="off"
+                                placeholder="Ketik nama siswa / santri di sini..." 
+                                oninput="handleSearchStudent(this.value)"
+                                onfocus="handleSearchStudent(this.value)"
+                                class="w-full pl-11 pr-11 py-4 bg-emerald-50/60 border-2 border-emerald-400 rounded-2xl text-sm sm:text-base focus:bg-white focus:ring-4 focus:ring-amber-300/60 focus:border-emerald-600 transition-all outline-none font-bold text-slate-900 placeholder:font-normal"
+                            >
+                            <button type="button" id="clearStudentBtn" onclick="clearSelectedStudent()" class="hidden absolute right-3.5 top-1/2 -translate-y-1/2 text-rose-500 hover:text-rose-700 p-1.5">
+                                <i class="fa-solid fa-circle-xmark text-xl"></i>
+                            </button>
+                        </div>
+
+                        <!-- Dropdown Daftar Siswa -->
+                        <div id="studentDropdown" class="hidden absolute z-30 mt-2 w-full bg-white rounded-2xl shadow-2xl border-2 border-emerald-500 max-h-72 overflow-y-auto custom-scrollbar divide-y divide-emerald-100">
+                            <!-- Diisi via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Kotak Data Otomatis Siswa & Orang Tua -->
+                    <div class="mt-4 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-4 rounded-2xl border-2 border-amber-300/90 space-y-3">
+                        <div class="flex items-center justify-between border-b border-emerald-200 pb-2">
+                            <span class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-id-card text-amber-500 text-sm"></i> Biodata Otomatis (Header: Kelas SD)
+                            </span>
+                            <span id="student-selected-status" class="text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full">
+                                Belum dipilih
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div class="bg-white p-2.5 rounded-xl border border-emerald-200 shadow-sm">
+                                <label class="block text-[10px] font-bold uppercase text-emerald-700">Kelas SD</label>
+                                <input type="text" id="autoKelas" readonly placeholder="-" class="w-full bg-transparent text-sm font-extrabold text-emerald-950 outline-none mt-0.5">
+                            </div>
+                            <div class="bg-white p-2.5 rounded-xl border border-emerald-200 shadow-sm">
+                                <label class="block text-[10px] font-bold uppercase text-emerald-700">NIK Siswa</label>
+                                <input type="text" id="autoNik" readonly placeholder="-" class="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-800 font-mono outline-none mt-0.5">
+                            </div>
+                            <div class="bg-white p-2.5 rounded-xl border border-amber-200 shadow-sm">
+                                <label class="block text-[10px] font-bold uppercase text-amber-700">Nama Ayah</label>
+                                <input type="text" id="autoAyah" readonly placeholder="Otomatis..." class="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-800 outline-none mt-0.5">
+                            </div>
+                            <div class="bg-white p-2.5 rounded-xl border border-amber-200 shadow-sm">
+                                <label class="block text-[10px] font-bold uppercase text-amber-700">Nama Ibu</label>
+                                <input type="text" id="autoIbu" readonly placeholder="Otomatis..." class="w-full bg-transparent text-xs sm:text-sm font-bold text-slate-800 outline-none mt-0.5">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div>
+                                <label class="block text-xs font-bold text-emerald-950 mb-1">Diisi Oleh (Orang Tua/Wali) <span class="text-rose-500">*</span></label>
+                                <select id="parentRepresentative" onchange="handleRepresentativePhoneAutoFill()" required class="w-full px-3.5 py-3 bg-white border-2 border-emerald-300 rounded-xl text-sm font-semibold focus:border-emerald-600 outline-none">
+                                    <option value="Ibu" selected>Ibu Kandung / Wali</option>
+                                    <option value="Ayah">Ayah Kandung / Wali</option>
+                                    <option value="Wali">Wali Santri / Siswa</option>
+                                </select>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-xs font-bold text-emerald-950">Nomor HP / WA Ayah / Ibu <span class="text-rose-500">*</span></label>
+                                    <span id="autoPhoneBadge" class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Otomatis Database</span>
+                                </div>
+                                <input type="tel" id="parentPhone" required placeholder="Otomatis terisi dari database / bisa diedit..." class="w-full px-3.5 py-3 bg-white border-2 border-emerald-300 rounded-xl text-sm font-bold text-emerald-950 focus:border-emerald-600 outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOTAK 2: PERTANYAAN SKRINING KESEHATAN -->
+                <div class="card-yellow-glow rounded-3xl p-5 sm:p-6 space-y-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-amber-400 text-emerald-950 font-extrabold text-sm flex items-center justify-center shadow-md">2</span>
+                        <label class="text-sm sm:text-base font-extrabold text-emerald-950">
+                            Pertanyaan Kondisi Kesehatan Anak <span class="text-rose-500">*</span>
+                        </label>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            <span class="text-xs sm:text-sm font-semibold text-slate-800">1. Apakah anak saat ini dalam kondisi sehat (tidak sedang demam tinggi)?</span>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <label class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border-2 border-emerald-400 text-xs sm:text-sm font-bold text-emerald-900 cursor-pointer shadow-sm">
+                                    <input type="radio" name="q_healthy" value="Ya, Sehat" required checked class="text-emerald-600"> Ya, Sehat
+                                </label>
+                                <label class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border-2 border-amber-300 text-xs sm:text-sm font-bold text-amber-900 cursor-pointer shadow-sm">
+                                    <input type="radio" name="q_healthy" value="Sedang Sakit/Demam" class="text-amber-600"> Sedang Demam
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            <span class="text-xs sm:text-sm font-semibold text-slate-800">2. Apakah anak memiliki riwayat alergi berat terhadap vaksin/obat tertentu?</span>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <label class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border-2 border-emerald-400 text-xs sm:text-sm font-bold text-emerald-900 cursor-pointer shadow-sm">
+                                    <input type="radio" name="q_allergy" value="Tidak Ada Alergi" required checked class="text-emerald-600"> Tidak Ada
+                                </label>
+                                <label class="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border-2 border-amber-300 text-xs sm:text-sm font-bold text-amber-900 cursor-pointer shadow-sm">
+                                    <input type="radio" name="q_allergy" value="Ada Riwayat Alergi" class="text-amber-600"> Ada Alergi
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOTAK 3: KEPUTUSAN SETUJU / TIDAK SETUJU & ALASAN -->
+                <div class="card-green-glow rounded-3xl p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-xl bg-emerald-600 text-amber-300 font-extrabold text-sm flex items-center justify-center shadow-md">3</span>
+                        <label class="text-sm sm:text-base font-extrabold text-emerald-950">
+                            Keputusan Persetujuan & Alasan Orang Tua <span class="text-rose-500">*</span>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <!-- Tombol Kotak SETUJU -->
+                        <label id="card-setuju" class="relative flex items-start p-4 rounded-2xl border-2 border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 cursor-pointer transition-all shadow-md shadow-emerald-500/15">
+                            <input type="radio" name="consentStatus" value="SETUJU" checked onchange="handleConsentChange(this.value)" class="mt-1 w-4 h-4 text-emerald-600">
+                            <div class="ml-3">
+                                <span class="block text-sm sm:text-base font-extrabold text-emerald-900 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i> SETUJU DIVAKSIN
+                                </span>
+                                <span class="block text-xs text-emerald-800 mt-1 leading-relaxed">
+                                    Saya mengizinkan anak saya diberikan vaksinasi sesuai jadwal kesehatan sekolah.
+                                </span>
+                            </div>
+                        </label>
+
+                        <!-- Tombol Kotak TIDAK SETUJU -->
+                        <label id="card-tidak" class="relative flex items-start p-4 rounded-2xl border-2 border-amber-300 bg-white hover:bg-amber-50/40 cursor-pointer transition-all">
+                            <input type="radio" name="consentStatus" value="TIDAK SETUJU" onchange="handleConsentChange(this.value)" class="mt-1 w-4 h-4 text-rose-600">
+                            <div class="ml-3">
+                                <span class="block text-sm sm:text-base font-extrabold text-slate-800 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-circle-xmark text-rose-500 text-lg"></i> TIDAK SETUJU
+                                </span>
+                                <span class="block text-xs text-slate-600 mt-1 leading-relaxed">
+                                    Saya tidak mengizinkan / menunda vaksinasi anak dengan alasan dan tanggung jawab penuh.
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Alasan Setuju / Tidak Setuju -->
+                    <div class="pt-2">
+                        <div class="flex flex-wrap items-center justify-between gap-1 mb-2">
+                            <label id="reasonLabel" class="block text-xs sm:text-sm font-extrabold text-emerald-950">
+                                Alasan Setuju Mengikuti Vaksinasi <span class="text-rose-500">*</span>
+                            </label>
+                            <span class="text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">Klik alasan cepat di bawah atau ketik manual</span>
+                        </div>
+
+                        <div id="reasonQuickChips" class="flex flex-wrap gap-1.5 mb-2.5"></div>
+
+                        <textarea 
+                            id="consentReason" 
+                            rows="2" 
+                            required 
+                            placeholder="Tuliskan alasan Bapak/Ibu di sini..."
+                            class="w-full p-3.5 bg-emerald-50/40 border-2 border-emerald-300 rounded-2xl text-sm font-medium focus:bg-white focus:border-emerald-600 outline-none"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <!-- KOTAK 4: PERNYATAAN TANGGUNG JAWAB MEDIS / KESEHATAN -->
+                <div id="disclaimerContainer" class="card-yellow-glow rounded-3xl p-5 sm:p-6 space-y-3 border-2 border-amber-400 bg-gradient-to-br from-amber-50 via-yellow-50/60 to-white">
+                    <div class="flex items-center gap-2.5 text-amber-950 font-extrabold text-sm sm:text-base">
+                        <span class="w-8 h-8 rounded-xl bg-amber-400 text-emerald-950 flex items-center justify-center shadow-md shrink-0">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </span>
+                        <span>4. Pernyataan Pertanggungjawaban Orang Tua / Wali</span>
+                    </div>
+
+                    <div id="disclaimerTextDisplay" class="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed bg-white p-4 rounded-2xl border-2 border-amber-300 shadow-sm">
+                        <!-- Diisi dinamis -->
+                    </div>
+
+                    <label class="flex items-start gap-3 p-3 rounded-2xl bg-emerald-900 text-white cursor-pointer select-none shadow-md">
+                        <input type="checkbox" id="disclaimerCheckbox" required class="mt-1 w-5 h-5 text-amber-400 rounded focus:ring-amber-400 shrink-0">
+                        <span class="text-xs sm:text-sm font-semibold leading-relaxed text-emerald-50">
+                            Saya menyatakan data di atas benar, dan <u class="text-amber-300 font-bold">apabila terjadi hal-hal terkait risiko kesehatan karena anak tidak divaksin atas keputusan orang tua, maka pihak kesehatan & sekolah tidak bertanggung jawab</u>.
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Tombol Kirim Besar & Nyaman di HP -->
+                <button type="submit" id="submitBtn" class="w-full py-4 px-6 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold rounded-2xl shadow-[0_10px_25px_-5px_rgba(16,185,129,0.55)] border-2 border-amber-300 transition-all flex items-center justify-center gap-2.5 text-base">
+                    <i class="fa-solid fa-paper-plane text-amber-300"></i>
+                    <span>KIRIM PERSETUJUAN VAKSIN SEKARANG</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- VIEW 2: DASHBOARD & REKAP TABEL ADMIN                 -->
+        <!-- ===================================================== -->
+        <section id="view-dashboard" class="hidden space-y-5 animate-fade no-print">
+
+            <!-- Header Filter Dashboard -->
+            <div class="card-dual-glow p-5 rounded-3xl flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg sm:text-xl font-extrabold text-emerald-950">Dashboard Monitoring Vaksinasi</h2>
+                    <p class="text-xs text-slate-600">Rekap persetujuan orang tua berdasarkan Form Arahan Vaksin & Kelas SD</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <select id="dashFormFilter" onchange="renderDashboard()" class="px-3.5 py-2.5 bg-emerald-50 border-2 border-emerald-400 rounded-xl text-xs font-extrabold text-emerald-950 outline-none max-w-xs">
+                        <option value="ACTIVE_FORM">Form Aktif Saat Ini</option>
+                        <option value="ALL_FORMS">Semua Riwayat Form Arahan</option>
+                    </select>
+
+                    <select id="dashClassFilter" onchange="renderDashboard()" class="px-3.5 py-2.5 bg-amber-50 border-2 border-amber-400 rounded-xl text-xs font-extrabold text-emerald-950 outline-none">
+                        <option value="ACTIVE_TARGET">Sesuai Kelas SD Sasaran Aktif</option>
+                        <option value="ALL">Semua Kelas SD</option>
+                        <option value="1">Tingkat Kelas 1 (1A, 1B, dst)</option>
+                        <option value="2">Tingkat Kelas 2 (2A, 2B, dst)</option>
+                        <option value="3">Tingkat Kelas 3 (3A, 3B, dst)</option>
+                        <option value="4">Tingkat Kelas 4 (4A, 4B, dst)</option>
+                        <option value="5">Tingkat Kelas 5 (5A, 5B, dst)</option>
+                        <option value="6">Tingkat Kelas 6 (6A, 6B, dst)</option>
+                    </select>
+
+                    <button onclick="switchTab('absen')" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 text-emerald-950 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm border border-amber-500">
+                        <i class="fa-solid fa-clipboard-check"></i> Menu Absen
+                    </button>
+
+                    <button onclick="generatePDFDocument('dashboard', 'preview')" class="px-3.5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-eye text-amber-300"></i> Preview PDF Tab Baru
+                    </button>
+
+                    <button onclick="generatePDFDocument('dashboard', 'download')" class="px-3.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-pdf"></i> Unduh PDF Rekap
+                    </button>
+
+                    <button onclick="exportToCSV()" class="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-file-csv"></i> CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5 Kotak Statistik dengan Bayangan Hijau & Kuning -->
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
+                <div class="card-green-glow p-4 rounded-2xl">
+                    <span class="text-xs font-bold text-slate-500">Total Siswa Sasaran</span>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-emerald-950 mt-1" id="stat-total">0</div>
+                    <span class="text-[11px] font-semibold text-emerald-700" id="stat-class-label">Kelas Aktif</span>
+                </div>
+                <div class="card-yellow-glow p-4 rounded-2xl">
+                    <span class="text-xs font-bold text-emerald-700">Sudah Mengisi</span>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1" id="stat-filled">0</div>
+                    <span class="text-[11px] font-bold text-amber-700" id="stat-progress-pct">0% Selesai</span>
+                </div>
+                <div class="card-yellow-glow p-4 rounded-2xl bg-amber-50/50">
+                    <span class="text-xs font-bold text-amber-800">Belum Mengisi</span>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-amber-600 mt-1" id="stat-unfilled">0</div>
+                    <span class="text-[11px] font-semibold text-amber-700">Menunggu Ortu</span>
+                </div>
+                <div class="card-green-glow p-4 rounded-2xl bg-emerald-50/50">
+                    <span class="text-xs font-bold text-emerald-800">Setuju Vaksin</span>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-1" id="stat-agreed">0</div>
+                    <span class="text-[11px] font-semibold text-emerald-700">Siap Divaksin</span>
+                </div>
+                <div class="card-yellow-glow p-4 rounded-2xl col-span-2 lg:col-span-1">
+                    <span class="text-xs font-bold text-rose-700">Tidak Setuju</span>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-1" id="stat-declined">0</div>
+                    <span class="text-[11px] font-semibold text-rose-700">Ada Pernyataan</span>
+                </div>
+            </div>
+
+            <!-- Bar Status Apakah Sudah Diisi Semua atau Belum -->
+            <div class="card-green-glow p-5 rounded-3xl">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                    <span class="text-xs font-extrabold text-emerald-950 uppercase tracking-wider">Status Kelengkapan Pengisian Vaksin Aktif</span>
+                    <span id="progress-status-badge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-200 text-amber-900 border border-amber-400">
+                        Belum Terisi Semua
+                    </span>
+                </div>
+                <div class="w-full h-4 bg-slate-100 rounded-full overflow-hidden flex border border-emerald-300 p-0.5">
+                    <div id="bar-agreed" class="bg-emerald-500 h-full rounded-l-full transition-all duration-500" style="width: 0%"></div>
+                    <div id="bar-declined" class="bg-amber-500 h-full rounded-r-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between text-xs text-slate-600 mt-2.5 gap-2 font-semibold">
+                    <div class="flex items-center gap-4">
+                        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Setuju Divaksin</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Tidak Setuju</span>
+                        <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-200"></span> Belum Mengisi</span>
+                    </div>
+                    <span id="progress-detail-text">0 dari 0 siswa telah mengisi</span>
+                </div>
+            </div>
+
+            <!-- Tabel Filter Setuju / Tidak Setuju / Belum -->
+            <div class="card-dual-glow rounded-3xl overflow-hidden">
+                <div class="p-4 sm:p-5 border-b border-emerald-200 bg-gradient-to-r from-emerald-50 to-amber-50 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-1.5 bg-white p-1.5 rounded-2xl border border-emerald-300 shadow-sm">
+                        <button onclick="setTableStatusFilter('ALL')" id="filter-btn-ALL" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-700 text-white shadow-sm transition-all">
+                            Semua
+                        </button>
+                        <button onclick="setTableStatusFilter('SETUJU')" id="filter-btn-SETUJU" class="px-3 py-1.5 rounded-xl text-xs font-extrabold text-emerald-800 hover:bg-emerald-50 transition-all">
+                            Setuju
+                        </button>
+                        <button onclick="setTableStatusFilter('TIDAK SETUJU')" id="filter-btn-TIDAK SETUJU" class="px-3 py-1.5 rounded-xl text-xs font-extrabold text-rose-700 hover:bg-rose-50 transition-all">
+                            Tidak Setuju
+                        </button>
+                        <button onclick="setTableStatusFilter('BELUM')" id="filter-btn-BELUM" class="px-3 py-1.5 rounded-xl text-xs font-extrabold text-amber-800 hover:bg-amber-50 transition-all">
+                            Belum Mengisi
+                        </button>
+                    </div>
+
+                    <div class="relative w-full sm:w-64">
+                        <i class="fa-solid fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-600 text-xs"></i>
+                        <input 
+                            type="text" 
+                            id="tableSearchInput" 
+                            oninput="renderDashboard()" 
+                            placeholder="Cari nama / NIK / orang tua..." 
+                            class="w-full pl-9 pr-3 py-2 bg-white border-2 border-emerald-300 rounded-xl text-xs font-semibold outline-none focus:border-emerald-600"
+                        >
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-emerald-900 text-amber-200 text-[11px] font-extrabold uppercase tracking-wider">
+                                <th class="py-3.5 px-4">No</th>
+                                <th class="py-3.5 px-4">Nama Siswa & NIK</th>
+                                <th class="py-3.5 px-4">Kelas SD</th>
+                                <th class="py-3.5 px-4">Orang Tua (Ayah & Ibu)</th>
+                                <th class="py-3.5 px-4">Status Vaksin</th>
+                                <th class="py-3.5 px-4">Alasan & Skrining</th>
+                                <th class="py-3.5 px-4 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboardTableBody" class="divide-y divide-emerald-100 text-xs sm:text-sm"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- VIEW 3: CETAK ABSEN PETUGAS VAKSIN                    -->
+        <!-- ===================================================== -->
+        <section id="view-absen" class="hidden space-y-5 animate-fade">
+            <!-- Panel Kontrol Cetak (Tidak ikut tercetak saat Print) -->
+            <div class="card-dual-glow p-5 rounded-3xl flex flex-wrap items-center justify-between gap-4 no-print">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full bg-amber-400 text-emerald-950 font-extrabold text-[10px] uppercase">Khusus Petugas Medis / UKS</span>
+                        <h2 class="text-lg sm:text-xl font-extrabold text-emerald-950">Daftar Absen & Ceklis Vaksinasi Siswa</h2>
+                    </div>
+                    <p class="text-xs text-slate-600 mt-0.5">Daftar ini memuat kolom <strong>No, Nama Siswa, NIK, Kelas SD, Status Setuju/Tidak Setuju, Ceklis Vaksin, dan Paraf</strong>.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <select id="absenClassFilter" onchange="renderAttendanceSheet()" class="px-3.5 py-2.5 bg-amber-50 border-2 border-amber-400 rounded-xl text-xs font-extrabold text-emerald-950 outline-none">
+                        <option value="ACTIVE_TARGET">Kelas SD Sasaran Aktif</option>
+                        <option value="ALL">Semua Kelas SD</option>
+                        <option value="1">Tingkat Kelas 1 (1A, 1B..)</option>
+                        <option value="2">Tingkat Kelas 2 (2A, 2B..)</option>
+                        <option value="3">Tingkat Kelas 3 (3A, 3B..)</option>
+                        <option value="4">Tingkat Kelas 4 (4A, 4B..)</option>
+                        <option value="5">Tingkat Kelas 5 (5A, 5B..)</option>
+                        <option value="6">Tingkat Kelas 6 (6A, 6B..)</option>
+                    </select>
+
+                    <select id="absenStatusFilter" onchange="renderAttendanceSheet()" class="px-3.5 py-2.5 bg-emerald-50 border-2 border-emerald-400 rounded-xl text-xs font-extrabold text-emerald-950 outline-none">
+                        <option value="ALL">Tampilkan Semua Siswa</option>
+                        <option value="SETUJU">Hanya yang SETUJU Vaksin</option>
+                        <option value="TIDAK SETUJU">Hanya yang TIDAK SETUJU</option>
+                        <option value="BELUM MENGISI">Hanya yang BELUM MENGISI</option>
+                    </select>
+
+                    <button onclick="generatePDFDocument('absen', 'preview')" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-500 text-emerald-950 rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md border border-amber-500">
+                        <i class="fa-solid fa-up-right-from-square"></i>
+                        <span>Preview PDF di Tab Baru</span>
+                    </button>
+
+                    <button onclick="generatePDFDocument('absen', 'download')" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-md border border-rose-400">
+                        <i class="fa-solid fa-file-arrow-down text-amber-200"></i>
+                        <span>Unduh File PDF Absen</span>
+                    </button>
+
+                    <button onclick="window.print()" class="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-lg border border-amber-300">
+                        <i class="fa-solid fa-print text-amber-300"></i>
+                        <span>Print Langsung</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lembar Absen Siap Cetak -->
+            <div class="card-green-glow print-area-box rounded-3xl p-5 sm:p-8 bg-white">
+                <div class="border-b-2 border-slate-800 pb-4 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-base sm:text-lg font-extrabold uppercase tracking-wide text-slate-900">
+                            DAFTAR ABSENSI & PERSETUJUAN VAKSINASI SISWA / SANTRI SD
+                        </h3>
+                        <p id="print-program-title" class="text-xs sm:text-sm font-bold text-emerald-800 mt-0.5">
+                            Program Bulan Imunisasi Anak Sekolah (BIAS)
+                        </p>
+                        <p id="print-schedule-info" class="text-xs text-slate-600">
+                            Jadwal Pelaksanaan: -
+                        </p>
+                    </div>
+                    <div class="text-left sm:text-right text-xs space-y-1">
+                        <div class="inline-block px-3 py-1 rounded-lg bg-amber-100 border border-amber-400 font-extrabold text-emerald-950" id="print-class-badge">
+                            Kelas Sasaran: 1, 2 SD
+                        </div>
+                        <div class="text-[11px] text-slate-600 font-semibold">
+                            Total: <strong id="absen-count-total">0</strong> |
+                            Setuju: <strong id="absen-count-agreed" class="text-emerald-700">0</strong> |
+                            Tidak Setuju: <strong id="absen-count-declined" class="text-rose-700">0</strong> |
+                            Belum Isi: <strong id="absen-count-unfilled" class="text-amber-700">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse print-table">
+                        <thead>
+                            <tr class="bg-emerald-100 text-emerald-950 text-xs font-extrabold uppercase">
+                                <th class="py-3 px-3 border border-slate-300 w-10 text-center">No</th>
+                                <th class="py-3 px-3 border border-slate-300">Nama Siswa / Santri</th>
+                                <th class="py-3 px-3 border border-slate-300">NIK</th>
+                                <th class="py-3 px-3 border border-slate-300 text-center">Kelas SD</th>
+                                <th class="py-3 px-3 border border-slate-300 text-center">Setuju / Tidak Setuju Vaksin</th>
+                                <th class="py-3 px-3 border border-slate-300 text-center w-28">Ceklis Hadir Vaksin</th>
+                                <th class="py-3 px-3 border border-slate-300 w-44">Keterangan / Paraf Petugas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody" class="text-xs sm:text-sm text-slate-800">
+                            <!-- Diisi via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-8 pt-4 grid grid-cols-2 sm:grid-cols-3 gap-6 text-xs text-center">
+                    <div>
+                        <p class="font-semibold text-slate-600">Mengetahui,</p>
+                        <p class="font-bold text-slate-900">Kepala Sekolah / Koordinator UKS</p>
+                        <div class="h-16"></div>
+                        <p class="font-bold underline text-slate-800">( .................................................. )</p>
+                    </div>
+                    <div class="hidden sm:block"></div>
+                    <div>
+                        <p class="font-semibold text-slate-600">Petugas Kesehatan / Vaksinator,</p>
+                        <p class="font-bold text-slate-900">Puskesmas / Tenaga Medis</p>
+                        <div class="h-16"></div>
+                        <p class="font-bold underline text-slate-800">( .................................................. )</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================================================== -->
+        <!-- VIEW 4: MENU PENGATURAN ADMIN & BUAT FORM BARU        -->
+        <!-- ===================================================== -->
+        <section id="view-admin" class="hidden space-y-6 animate-fade no-print">
+
+            <!-- BAGIAN BARU: DAFTAR FORM / SURAT ARAHAN VAKSINASI (BISA BUAT BANYAK & PILIH TAMPILKAN) -->
+            <div class="card-dual-glow rounded-3xl p-5 sm:p-6 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b-2 border-emerald-200 pb-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-full bg-amber-400 text-emerald-950 font-extrabold text-[10px] uppercase">Multi Surat Arahan</span>
+                            <h2 class="text-base sm:text-lg font-extrabold text-emerald-950">Daftar Form Vaksinasi / Surat Arahan</h2>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-0.5">
+                            Jika ada surat arahan vaksinasi baru, klik <strong>"+ Buat Form / Arahan Baru"</strong>, lalu klik <strong>"Tampilkan di Form"</strong> pada surat yang ingin diaktifkan.
+                        </p>
+                    </div>
+                    <button type="button" onclick="createNewBlankFormTemplate()" class="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-emerald-950 font-extrabold rounded-2xl text-xs sm:text-sm shadow-md flex items-center gap-2 border border-amber-600/30">
+                        <i class="fa-solid fa-file-circle-plus text-base"></i>
+                        <span>+ Buat Form / Arahan Baru</span>
+                    </button>
+                </div>
+
+                <!-- Grid Kartu Daftar Form yang Pernah Dibuat -->
+                <div id="formTemplatesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    <!-- Diisi via JS renderFormTemplatesList() -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- Kolom Kiri: Editor Form / Surat Arahan & Multi Kelas SD Sasaran -->
+                <div class="lg:col-span-7 card-dual-glow rounded-3xl p-5 sm:p-6 space-y-5">
+                    <div class="border-b-2 border-emerald-200 pb-3 flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-lg font-extrabold text-emerald-950" id="editorFormHeaderTitle">Edit / Buat Form Surat Arahan Vaksin</h2>
+                                <span id="editingFormBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-400">Sedang Aktif</span>
+                            </div>
+                            <p class="text-xs text-slate-600">Atur judul surat arahan, jadwal, kelas SD sasaran, dan penjelasan vaksin</p>
+                        </div>
+                        <span class="w-10 h-10 rounded-2xl bg-amber-400 text-emerald-950 flex items-center justify-center shadow-sm shrink-0">
+                            <i class="fa-solid fa-sliders text-lg"></i>
+                        </span>
+                    </div>
+
+                    <form onsubmit="saveAdminConfig(event)" class="space-y-4">
+                        <input type="hidden" id="editingFormId" value="">
+
+                        <!-- PILIHAN MULTI KELAS SD SASARAN (MENDUKUNG TINGKAT 1-6 & ROMBEL 1A, 1B, DST) -->
+                        <div class="bg-gradient-to-r from-emerald-50 to-amber-50 p-4 rounded-2xl border-2 border-emerald-400 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <label class="block text-xs sm:text-sm font-extrabold text-emerald-950">
+                                    Pilih Kelas SD Sasaran Vaksin (Bisa Pilih Lebih dari 1 Kelas) <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <button type="button" onclick="toggleAllTargetClasses(true)" class="px-2.5 py-1 bg-emerald-700 text-white rounded-lg text-[11px] font-bold">
+                                        Semua Kelas
+                                    </button>
+                                    <button type="button" onclick="toggleAllTargetClasses(false)" class="px-2.5 py-1 bg-amber-200 text-amber-950 rounded-lg text-[11px] font-bold">
+                                        Hanya Kelas 1
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5" id="multiClassCheckboxes">
+                                <!-- Diisi dinamis berdasarkan Kelas SD di database + Tingkat 1-6 -->
+                            </div>
+                            <p class="text-[11px] text-emerald-800 font-medium">
+                                * Jika Anda mencentang <strong>Kelas 1 SD</strong>, maka seluruh rombel <strong>1A, 1B, 1C, dst.</strong> otomatis diizinkan mengisi form. Anda juga bisa memilih rombel spesifik.
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-extrabold text-emerald-950 mb-1">Judul Form / Surat Arahan Vaksinasi <span class="text-rose-500">*</span></label>
+                                <input type="text" id="adminVaccineTitle" required placeholder="Contoh: Surat Arahan Imunisasi BIAS Kelas 1 & 2" class="w-full px-3.5 py-2.5 bg-emerald-50/50 border-2 border-emerald-300 rounded-xl text-sm font-bold outline-none focus:border-emerald-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-extrabold text-emerald-950 mb-1">Jadwal Pelaksanaan Vaksin <span class="text-rose-500">*</span></label>
+                                <input type="text" id="adminSchedule" required placeholder="Contoh: Jumat, 20 November 2026" class="w-full px-3.5 py-2.5 bg-emerald-50/50 border-2 border-emerald-300 rounded-xl text-sm font-semibold outline-none focus:border-emerald-600">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-extrabold text-emerald-950 mb-1">
+                                Penjelasan Pentingnya Vaksin / Isi Surat Arahan (Tampil di Atas Form) <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea id="adminImportanceText" rows="3" required class="w-full p-3.5 bg-emerald-50/50 border-2 border-emerald-300 rounded-xl text-xs sm:text-sm font-medium outline-none focus:border-emerald-600"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-extrabold text-emerald-950 mb-1">
+                                Redaksi Pernyataan Jika Tidak Divaksin (Pembebasan Tanggung Jawab Kesehatan) <span class="text-rose-500">*</span>
+                            </label>
+                            <textarea id="adminDisclaimerText" rows="3" required class="w-full p-3.5 bg-amber-50/60 border-2 border-amber-300 rounded-xl text-xs sm:text-sm font-medium outline-none focus:border-amber-500"></textarea>
+                        </div>
+
+                        <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 flex items-center justify-between gap-3">
+                            <label class="flex items-center gap-2.5 cursor-pointer">
+                                <input type="checkbox" id="setAsActiveFormCheckbox" checked class="w-4 h-4 text-emerald-600 rounded">
+                                <span class="text-xs sm:text-sm font-extrabold text-emerald-950">Langsung Tampilkan Form Ini kepada Orang Tua Sekarang</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-extrabold text-emerald-950 mb-1">
+                                URL API Web App Google Apps Script (Sudah Terpasang Otomatis)
+                            </label>
+                            <input type="url" id="adminScriptUrl" value="https://script.google.com/macros/s/AKfycbztL9ZX7VJ_doR42y5_R-t7j-N-DFtJkjw3X-l3wFKa7LLrnZa5pj0LvsztS172R9UZ/exec" class="w-full px-3.5 py-2.5 bg-emerald-50/70 border-2 border-emerald-400 rounded-xl text-xs font-mono text-emerald-900 outline-none focus:border-emerald-600">
+                        </div>
+
+                        <div class="pt-2 flex flex-wrap items-center justify-between gap-3">
+                            <button type="button" onclick="loadSampleSubmissions()" class="px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border border-amber-400 font-extrabold rounded-xl text-xs transition-all">
+                                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Buat Simulasi Data Persetujuan
+                            </button>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="saveAsNewFormTemplate()" class="px-4 py-3 bg-amber-400 hover:bg-amber-500 text-emerald-950 font-extrabold rounded-xl text-xs sm:text-sm shadow-md border border-amber-500 transition-all">
+                                    <i class="fa-solid fa-plus mr-1"></i> Simpan Sebagai Form Baru
+                                </button>
+                                <button type="submit" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-lg shadow-emerald-600/30 border border-amber-300 transition-all">
+                                    <i class="fa-solid fa-floppy-disk mr-1.5"></i> Simpan & Terapkan Form
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Kolom Kanan: Kelola Database Siswa ActiveSheet (Header: Nama Siswa, NIK, Kelas SD, Nama Ayah, Nama Ibu) -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="card-yellow-glow rounded-3xl p-5 sm:p-6 space-y-4">
+                        <div class="flex items-center justify-between border-b-2 border-amber-200 pb-3">
+                            <div>
+                                <h3 class="text-base font-extrabold text-emerald-950">Database Siswa (Kolom: Kelas SD)</h3>
+                                <p class="text-xs text-slate-600">Hanya membaca kolom <code>Kelas SD</code> (1A, 1B, 2A, dst), mengabaikan Kelas Tahfizh</p>
+                            </div>
+                            <button onclick="openDbModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm">
+                                <i class="fa-solid fa-file-import mr-1"></i> Sumber Data
+                            </button>
+                        </div>
+
+                        <!-- Form Tambah Siswa + NIK + Kelas SD (1A, 1B, dst) -->
+                        <form onsubmit="addManualStudent(event)" class="space-y-3">
+                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-emerald-900">Tambah Siswa / Santri Manual</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                <input type="text" id="newStudName" required placeholder="Nama Siswa / Santri" class="px-3 py-2.5 bg-emerald-50/50 border-2 border-emerald-300 rounded-xl text-xs font-bold outline-none">
+                                <input type="text" id="newStudNik" required placeholder="NIK Siswa (Contoh: 1116041403950001)" class="px-3 py-2.5 bg-emerald-50/50 border-2 border-emerald-300 rounded-xl text-xs font-mono font-bold outline-none">
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                <input type="text" id="newStudClass" required placeholder="Kelas SD (1A)" value="1A" class="px-2.5 py-2.5 bg-amber-50 border-2 border-amber-400 rounded-xl text-xs font-extrabold text-emerald-950 outline-none">
+                                <input type="text" id="newStudFather" required placeholder="Nama Ayah" class="px-3 py-2.5 bg-white border-2 border-emerald-300 rounded-xl text-xs font-semibold outline-none">
+                                <input type="text" id="newStudMother" required placeholder="Nama Ibu" class="px-3 py-2.5 bg-white border-2 border-emerald-300 rounded-xl text-xs font-semibold outline-none">
+                                <input type="tel" id="newStudPhone" placeholder="No. HP Ibu/Ayah" class="px-3 py-2.5 bg-white border-2 border-emerald-300 rounded-xl text-xs font-semibold outline-none">
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-emerald-800 hover:bg-emerald-900 text-amber-300 rounded-xl text-xs font-extrabold shadow-sm">
+                                + Tambahkan ke Database Siswa
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Kotak Info API Apps Script & Database Induk -->
+                    <div class="card-green-glow rounded-3xl p-5 bg-gradient-to-br from-emerald-900 to-teal-950 text-white space-y-3">
+                        <div class="flex items-center gap-2 text-amber-300 font-extrabold text-sm">
+                            <i class="fa-solid fa-cloud-bolt text-base"></i>
+                            <span>API Apps Script & Database Induk Terhubung</span>
+                        </div>
+                        <p class="text-xs text-emerald-100 leading-relaxed">
+                            1. <strong>API Web App Aktif:</strong><br>
+                            <code class="text-amber-300 break-all text-[10px]">https://script.google.com/macros/s/AKfycbztL9ZX7VJ_doR42y5_R-t7j-N-DFtJkjw3X-l3wFKa7LLrnZa5pj0LvsztS172R9UZ/exec</code><br><br>
+                            2. <strong>Database Siswa Induk (Header: Kelas SD):</strong><br>
+                            <code class="text-emerald-200 break-all text-[10px]">https://docs.google.com/spreadsheets/d/e/2PACX-1vTj9NDKstrj0d9JH7PSMGc4X9ZP1JEarvqoXhF2BZcesqs52oW_jYNKd_fI832uYg/pubhtml?gid=1632329455&single=true</code>
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===================================================== -->
+    <!-- MODAL SUMBER DATABASE INDUK & IMPOR CSV               -->
+    <!-- ===================================================== -->
+    <div id="dbModal" class="hidden fixed inset-0 z-50 bg-emerald-950/70 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+        <div class="card-dual-glow rounded-3xl max-w-2xl w-full p-6 bg-white space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b-2 border-emerald-200 pb-3">
+                <h3 class="text-base font-extrabold text-emerald-950 flex items-center gap-2">
+                    <i class="fa-solid fa-database text-emerald-600"></i> Koneksi Database Anak (Google Spreadsheet Induk)
+                </h3>
+                <button onclick="closeDbModal()" class="text-slate-400 hover:text-rose-600">
+                    <i class="fa-solid fa-circle-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div class="bg-emerald-50 border-2 border-emerald-300 p-3.5 rounded-2xl text-emerald-950 space-y-2">
+                    <div class="font-extrabold text-emerald-900">Link Database Induk Siswa (Aktif & Permanen):</div>
+                    <input type="text" id="masterSheetUrlInput" readonly value="https://docs.google.com/spreadsheets/d/e/2PACX-1vTj9NDKstrj0d9JH7PSMGc4X9ZP1JEarvqoXhF2BZcesqs52oW_jYNKd_fI832uYg/pubhtml?gid=1632329455&single=true" class="w-full p-2 bg-white border border-emerald-300 rounded-xl font-mono text-[11px] text-emerald-900">
+                    <div class="flex flex-wrap gap-2 pt-1">
+                        <button type="button" onclick="fetchMasterStudentSpreadsheet(true)" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-extrabold text-xs shadow-sm">
+                            <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Sinkronkan Ulang dari Link Ini Sekarang
+                        </button>
+                        <a href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTj9NDKstrj0d9JH7PSMGc4X9ZP1JEarvqoXhF2BZcesqs52oW_jYNKd_fI832uYg/pubhtml?gid=1632329455&single=true" target="_blank" class="px-3.5 py-2 bg-amber-200 hover:bg-amber-300 text-amber-950 rounded-xl font-extrabold text-xs">
+                            <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Lihat Tabel Asli
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-extrabold text-emerald-950 mb-1">
+                        Atau Copy & Paste Manual Baris dari Spreadsheet (Opsional jika Internet Terkendala):
+                    </label>
+                    <textarea id="bulkPasteInput" rows="5" placeholder="Nama Siswa,NIK,Kelas SD,Nama Ayah,Nama Ibu&#10;Ahmad Fauzi,3201011205180001,Kelas 1,Budi Santoso,Siti Aminah" class="w-full p-3 bg-amber-50/40 border-2 border-emerald-400 rounded-2xl font-mono text-xs outline-none"></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                <button onclick="closeDbModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">
+                    Tutup
+                </button>
+                <button onclick="importBulkPaste()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow-md">
+                    <i class="fa-solid fa-check mr-1"></i> Muat Data Paste Manual
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- POPUP MODAL KONFIRMASI ORANG TUA SETELAH KIRIM FORM    -->
+    <!-- (HIJAU CENTANG JIKA SETUJU / SILANG MERAH JIKA TOLAK)  -->
+    <!-- ===================================================== -->
+    <div id="parentSubmissionPopup" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 no-print">
+        <div id="parentPopupCard" class="rounded-3xl max-w-md w-full p-6 sm:p-7 bg-white text-center space-y-4 animate-fade border-4 shadow-2xl">
+            <!-- Ikon Utama (Centang Hijau / Silang Merah) -->
+            <div id="parentPopupIconWrap" class="w-24 h-24 rounded-full mx-auto flex items-center justify-center shadow-lg">
+                <!-- Diisi via JS -->
+            </div>
+
+            <!-- Judul Utama -->
+            <div class="space-y-1.5">
+                <span id="parentPopupBadge" class="inline-block px-3.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider"></span>
+                <h3 id="parentPopupTitle" class="text-xl sm:text-2xl font-extrabold leading-tight"></h3>
+                <p id="parentPopupSubtitle" class="text-xs sm:text-sm font-semibold text-slate-600 leading-relaxed"></p>
+            </div>
+
+            <!-- Rincian Siswa yang Dikirim -->
+            <div id="parentPopupDetails" class="text-left bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+                <!-- Diisi via JS -->
+            </div>
+
+            <!-- Keterangan Terkirim ke Sekolah -->
+            <div id="parentPopupFooterNote" class="p-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2">
+                <i class="fa-solid fa-building-shield text-base"></i>
+                <span>Data konfirmasi ini telah resmi dikirim & tercatat di database Sekolah.</span>
+            </div>
+
+            <button type="button" onclick="closeParentSubmissionPopup()" id="parentPopupCloseBtn" class="w-full py-3.5 px-6 rounded-2xl font-extrabold text-sm text-white shadow-lg transition-all">
+                Selesai & Tutup
+            </button>
+        </div>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- TOAST NOTIFIKASI ELEGAN                               -->
+    <!-- ===================================================== -->
+    <div id="toastNotification" class="fixed top-5 right-5 z-50 hidden max-w-md bg-emerald-950 text-white px-5 py-4 rounded-2xl shadow-2xl border-2 border-amber-400 flex items-start gap-3 animate-fade no-print">
+        <div id="toastIcon" class="text-amber-400 text-xl mt-0.5">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="flex-grow">
+            <h4 id="toastTitle" class="text-sm font-extrabold text-amber-300">Berhasil</h4>
+            <p id="toastMessage" class="text-xs text-emerald-50 mt-0.5 leading-relaxed"></p>
+        </div>
+        <button onclick="hideToast()" class="text-emerald-300 hover:text-white">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- ===================================================== -->
+    <!-- JAVASCRIPT LOGIC                                      -->
+    <!-- ===================================================== -->
+    <script>
+        // URL Database Induk Siswa sesuai permintaan Bapak/Ibu (TETAP & OTOMATIS)
+        const MASTER_PUBHTML_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTj9NDKstrj0d9JH7PSMGc4X9ZP1JEarvqoXhF2BZcesqs52oW_jYNKd_fI832uYg/pubhtml?gid=1632329455&single=true";
+        const MASTER_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTj9NDKstrj0d9JH7PSMGc4X9ZP1JEarvqoXhF2BZcesqs52oW_jYNKd_fI832uYg/pub?gid=1632329455&single=true&output=csv";
+
+        // URL API Google Apps Script yang Bapak/Ibu berikan (Tertanam Permanen)
+        const DEFAULT_GAS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbztL9ZX7VJ_doR42y5_R-t7j-N-DFtJkjw3X-l3wFKa7LLrnZa5pj0LvsztS172R9UZ/exec";
+
+        // Daftar Banyak Form / Surat Arahan Vaksinasi (Bisa tambah baru & pilih mana yang ditampilkan di Form)
+        let formTemplatesDB = [
+            {
+                id: "FORM_BIAS_01",
+                vaccineTitle: "Surat Arahan Bulan Imunisasi Anak Sekolah (BIAS) - Campak Rubella & DT/Td",
+                schedule: "Jumat, 20 November 2026 (Pukul 08.00 - 11.30 WIB)",
+                targetClasses: ["1", "2", "5"],
+                importanceText: "1. Melindungi santri/siswa SD dari penyakit menular berbahaya (Campak, Rubella, Difteri, Tetanus).\n2. Membentuk kekebalan kelompok (Herd Immunity) di lingkungan sekolah/madrasah.\n3. Vaksin resmi dari Puskesmas/Kemenkes RI, aman, halal, dan diberikan oleh tenaga medis profesional.",
+                disclaimerText: "Pernyataan Tanggung Jawab: Apabila terjadi hal-hal medis atau wabah terkait anak yang TIDAK divaksinasi karena keputusan penolakan orang tua/wali, maka pihak Kesehatan (Puskesmas) dan Sekolah TIDAK BERTANGGUNG JAWAB karena orang tua telah memilih untuk tidak melakukan vaksinasi.",
+                isActive: true,
+                createdAt: "14/11/2026"
+            },
+            {
+                id: "FORM_POLIO_02",
+                vaccineTitle: "Surat Arahan Pekan Imunisasi Nasional (PIN Polio & Imunisasi Lanjutan)",
+                schedule: "Senin, 30 November 2026 (Pukul 08.00 - 11.00 WIB)",
+                targetClasses: ["1", "2", "3", "4", "5", "6"],
+                importanceText: "1. Mencegah risiko kelumpuhan permanen akibat virus Polio pada anak usia Sekolah Dasar.\n2. Pelaksanaan serentak sesuai arahan Dinas Kesehatan & Puskesmas setempat.",
+                disclaimerText: "Pernyataan Tanggung Jawab: Apabila terjadi hal-hal terkait risiko kesehatan karena anak tidak divaksin atas keputusan orang tua/wali, maka pihak Kesehatan dan Sekolah tidak bertanggung jawab.",
+                isActive: false,
+                createdAt: "14/11/2026"
+            }
+        ];
+
+        // Konfigurasi Form yang Sedang Aktif Ditampilkan kepada Orang Tua
+        let adminConfig = {
+            activeFormId: "FORM_BIAS_01",
+            targetClasses: ["1", "2", "3", "4", "5", "6"],
+            vaccineTitle: "Surat Arahan Bulan Imunisasi Anak Sekolah (BIAS) - Campak Rubella, DT & Td",
+            schedule: "Jumat, 20 November 2026 (Pukul 08.00 - 11.30 WIB)",
+            importanceText: "1. Melindungi santri/siswa SD dari penyakit menular berbahaya yang dapat mengganggu tumbuh kembang dan kegiatan belajar.\n2. Membentuk kekebalan kelompok (Herd Immunity) di lingkungan sekolah/madrasah.\n3. Vaksin resmi dari Puskesmas/Kemenkes RI, aman, halal, dan diberikan oleh tenaga medis profesional.",
+            disclaimerText: "Pernyataan Tanggung Jawab: Apabila terjadi hal-hal medis atau wabah terkait anak yang TIDAK divaksinasi karena keputusan penolakan orang tua/wali, maka pihak Kesehatan (Puskesmas) dan Sekolah TIDAK BERTANGGUNG JAWAB karena orang tua telah memilih untuk tidak melakukan vaksinasi.",
+            scriptUrl: DEFAULT_GAS_WEBAPP_URL
+        };
+
+        // Data Awal Siswa (Menggunakan format NIK 16 Digit seperti 1116041403950001, Kelas SD: 1A, 1B, serta Nomor HP Ibu/Ayah)
+        let studentsDB = [
+            { id: "S01", nama: "Aditya Pratama Putra", nik: "1116041403950001", kelas: "1A", tingkat: "1", ayah: "Budi Pratama", ibu: "Siti Rahmawati", hpIbu: "081260112201", hpAyah: "081360112202", hp: "081260112201" },
+            { id: "S02", nama: "Aisyah Humaira Zahra", nik: "1116045807190002", kelas: "1B", tingkat: "1", ayah: "Hendra Wijaya", ibu: "Nurul Hidayah", hpIbu: "081260112203", hpAyah: "081360112204", hp: "081260112203" },
+            { id: "S03", nama: "Alif Rahman Hakim", nik: "1116042209190003", kelas: "1A", tingkat: "1", ayah: "Lukman Hakim", ibu: "Dewi Sartika", hpIbu: "081260112205", hpAyah: "081360112206", hp: "081260112205" },
+            { id: "S04", nama: "Arjuna Satria Nugroho", nik: "1116040503180005", kelas: "2A", tingkat: "2", ayah: "Agus Nugroho", ibu: "Maya Sari", hpIbu: "081260112207", hpAyah: "081360112208", hp: "081260112207" },
+            { id: "S05", nama: "Citra Lestari Ningrum", nik: "1116045201170008", kelas: "3B", tingkat: "3", ayah: "Wahyu Hidayat", ibu: "Yulianti", hpIbu: "081260112209", hpAyah: "081360112210", hp: "081260112209" },
+            { id: "S06", nama: "Farel Prayoga Utama", nik: "1116042708160010", kelas: "4A", tingkat: "4", ayah: "Gunawan", ibu: "Ratna Dewi", hpIbu: "081260112211", hpAyah: "081360112212", hp: "081260112211" },
+            { id: "S07", nama: "Hafizhan Raffa Khairy", nik: "1116040912150012", kelas: "5A", tingkat: "5", ayah: "Zainal Abidin", ibu: "Fitriani", hpIbu: "081260112213", hpAyah: "081360112214", hp: "081260112213" },
+            { id: "S08", nama: "M. Zidan Alfarizi", nik: "1116041704140014", kelas: "6B", tingkat: "6", ayah: "Kurniawan", ibu: "Desi Ratnasari", hpIbu: "081260112215", hpAyah: "081360112216", hp: "081260112215" }
+        ];
+
+        // Database Hasil Input Persetujuan Vaksinasi
+        let submissionsDB = [];
+
+        // State Pilihan Siswa & Filter Tabel Dashboard
+        let selectedStudent = null;
+        let currentTableStatusFilter = "ALL";
+
+        // Pilihan Chip Alasan Cepat
+        const QUICK_REASONS = {
+            "SETUJU": [
+                "Setuju agar daya tahan tubuh anak kuat dan terhindar dari penyakit menular.",
+                "Mendukung penuh program kesehatan sekolah / UKS dan Puskesmas.",
+                "Melengkapi jadwal imunisasi wajib anak usia Sekolah Dasar."
+            ],
+            "TIDAK SETUJU": [
+                "Anak sedang demam / kurang sehat, mohon ditunda.",
+                "Anak sudah melakukan vaksinasi mandiri di Rumah Sakit / Dokter Anak.",
+                "Anak memiliki riwayat alergi medis terhadap komponen vaksin tertentu.",
+                "Keputusan keluarga memilih tidak mengikuti vaksinasi dengan tanggung jawab penuh."
+            ]
+        };
+
+        // =====================================================
+        // PEMETAAN PINTAR KHUSUS HEADER "KELAS SD" (1A, 1B, 2A, dst),
+        // DETEKSI NIK 16 DIGIT (111604...), DAN NOMOR HP IBU / AYAH
+        // =====================================================
+        function mapRowsToStudents(rows) {
+            if (!rows || rows.length < 2) return [];
+
+            let headerRowIdx = -1;
+            let idxNama = -1, idxNik = -1, idxKelasSD = -1, idxAyah = -1, idxIbu = -1;
+            let idxHpIbu = -1, idxHpAyah = -1, idxHpUmum = -1;
+
+            // 1. Cari baris yang memiliki Header "Kelas SD" atau "Nama Siswa"
+            for (let r = 0; r < Math.min(20, rows.length); r++) {
+                const rowLower = rows[r].map(c => String(c || "").toLowerCase().replace(/\s+/g, " ").trim());
+
+                let fKelasSD = rowLower.findIndex(c => c === "kelas sd" || c.includes("kelas sd"));
+                if (fKelasSD === -1) {
+                    fKelasSD = rowLower.findIndex(c =>
+                        (c === "kelas" || c.includes("kelas") || c.includes("rombel")) &&
+                        !c.includes("tahfizh") &&
+                        !c.includes("tahfidz") &&
+                        !c.includes("halaqah") &&
+                        !c.includes("quran") &&
+                        !c.includes("jilid")
+                    );
+                }
+
+                const fNama = rowLower.findIndex(c =>
+                    c === "nama siswa" || c === "nama lengkap" || c === "nama santri" || c === "nama anak" || c === "nama" ||
+                    c.includes("nama siswa") || c.includes("nama lengkap") || c.includes("nama santri")
+                );
+
+                if (fKelasSD !== -1 || fNama !== -1) {
+                    headerRowIdx = r;
+                    idxNama = fNama !== -1 ? fNama : 0;
+                    idxKelasSD = fKelasSD;
+
+                    // Cari kolom NIK Siswa / Nomor Induk Keluarga / Kependudukan (hindari NIK Ayah/Ibu jika ada NIK Siswa)
+                    idxNik = rowLower.findIndex(c =>
+                        (c === "nik" || c === "nik siswa" || c === "nik anak" || c === "nik santri" ||
+                         c.includes("nomor induk keluarga") || c.includes("nomor induk kependudukan") || c.includes("no nik") || c.includes("nik")) &&
+                        !c.includes("ayah") && !c.includes("ibu")
+                    );
+                    if (idxNik === -1) {
+                        idxNik = rowLower.findIndex(c => c.includes("nik") || c.includes("nisn") || c.includes("induk"));
+                    }
+
+                    idxAyah = rowLower.findIndex(c =>
+                        (c.includes("nama ayah") || c === "ayah" || c.includes("bapak")) &&
+                        !c.includes("hp") && !c.includes("wa") && !c.includes("telp") && !c.includes("nomor") && !c.includes("nik")
+                    );
+                    idxIbu = rowLower.findIndex(c =>
+                        (c.includes("nama ibu") || c === "ibu" || c.includes("mama")) &&
+                        !c.includes("hp") && !c.includes("wa") && !c.includes("telp") && !c.includes("nomor") && !c.includes("nik")
+                    );
+
+                    // Cari kolom Nomor HP Ibu / Ayah / Wali
+                    idxHpIbu = rowLower.findIndex(c =>
+                        (c.includes("hp") || c.includes("wa") || c.includes("telp") || c.includes("telepon") || c.includes("nomor") || c.includes("no.")) &&
+                        (c.includes("ibu") || c.includes("mama"))
+                    );
+                    idxHpAyah = rowLower.findIndex(c =>
+                        (c.includes("hp") || c.includes("wa") || c.includes("telp") || c.includes("telepon") || c.includes("nomor") || c.includes("no.")) &&
+                        (c.includes("ayah") || c.includes("bapak"))
+                    );
+                    idxHpUmum = rowLower.findIndex(c =>
+                        c.includes("no hp") || c.includes("nomor hp") || c.includes("no. hp") || c.includes("no wa") ||
+                        c.includes("nomor wa") || c.includes("whatsapp") || c.includes("telepon") || c.includes("no telp") || c === "hp" || c === "wa"
+                    );
+                    break;
+                }
+            }
+
+            if (headerRowIdx === -1) headerRowIdx = 0;
+
+            const maxCols = rows[headerRowIdx] ? rows[headerRowIdx].length : 0;
+
+            // 2. Deteksi pengaman Kelas SD ("1A", "1B", "2A", dst)
+            let bestSdCol = -1;
+            let bestSdScore = 0;
+            for (let c = 0; c < maxCols; c++) {
+                const headerTitle = String((rows[headerRowIdx] && rows[headerRowIdx][c]) || "").toLowerCase().trim();
+                if (headerTitle.includes("tahfizh") || headerTitle.includes("tahfidz") || headerTitle.includes("halaqah")) continue;
+                if (headerTitle === "kelas sd" || headerTitle.includes("kelas sd")) {
+                    bestSdCol = c;
+                    bestSdScore = 9999;
+                    break;
+                }
+                let score = 0;
+                for (let r = headerRowIdx + 1; r < Math.min(headerRowIdx + 30, rows.length); r++) {
+                    const val = String((rows[r] && rows[r][c]) || "").trim().toUpperCase();
+                    if (/^[1-6][A-G]?$/.test(val) || /^KELAS\s*[1-6][A-G]?$/i.test(val)) score++;
+                }
+                if (score > bestSdScore) {
+                    bestSdScore = score;
+                    bestSdCol = c;
+                }
+            }
+            if (bestSdCol !== -1) idxKelasSD = bestSdCol;
+
+            // 3. Deteksi pengaman NIK 16 Digit (contoh: 1116041403950001)
+            let bestNikCol = -1;
+            let bestNikScore = 0;
+            for (let c = 0; c < maxCols; c++) {
+                const headerTitle = String((rows[headerRowIdx] && rows[headerRowIdx][c]) || "").toLowerCase().trim();
+                if (headerTitle.includes("ayah") || headerTitle.includes("ibu") || headerTitle.includes("hp") || headerTitle.includes("wa")) continue;
+
+                let score = 0;
+                for (let r = headerRowIdx + 1; r < Math.min(headerRowIdx + 30, rows.length); r++) {
+                    const rawCell = String((rows[r] && rows[r][c]) || "").replace(/\D/g, "");
+                    if (rawCell.length === 16) {
+                        score += 3;
+                        if (rawCell.startsWith("1116") || rawCell.startsWith("11") || rawCell.startsWith("12") || rawCell.startsWith("3")) {
+                            score += 1;
+                        }
+                    }
+                }
+                if (score > bestNikScore) {
+                    bestNikScore = score;
+                    bestNikCol = c;
+                }
+            }
+            if (bestNikCol !== -1 && (idxNik === -1 || bestNikScore >= 4)) {
+                idxNik = bestNikCol;
+            }
+
+            const result = [];
+            for (let i = headerRowIdx + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length < 2) continue;
+
+                const nama = String(row[idxNama] || "").trim();
+                if (!nama || nama.length < 2) continue;
+                const lowNama = nama.toLowerCase();
+                if (lowNama === "nama" || lowNama.includes("nama siswa") || lowNama.includes("nama lengkap")) continue;
+
+                const rawKelasSD = idxKelasSD !== -1 ? String(row[idxKelasSD] || "").trim() : "1";
+                const cleanKelasSD = formatDisplayKelasSD(rawKelasSD);
+                const gradeLevel = extractGradeNumber(cleanKelasSD);
+
+                // Ambil NIK dari kolom idxNik, atau pindai sel yang memiliki 16 digit (seperti 1116041403950001)
+                let nik = idxNik !== -1 ? String(row[idxNik] || "").replace(/^'+/, "").trim() : "";
+                if (!nik || nik === "-" || nik.replace(/\D/g, "").length < 10) {
+                    for (let c = 0; c < row.length; c++) {
+                        const digitsOnly = String(row[c] || "").replace(/\D/g, "");
+                        if (digitsOnly.length === 16) {
+                            nik = digitsOnly;
+                            break;
+                        }
+                    }
+                }
+
+                const ayah = idxAyah !== -1 ? String(row[idxAyah] || "-").trim() : "-";
+                const ibu = idxIbu !== -1 ? String(row[idxIbu] || "-").trim() : "-";
+
+                // Ambil Nomor HP Ibu & Ayah dari kolom terkait atau pindai pola nomor telepon (08... / 628...)
+                let hpIbu = idxHpIbu !== -1 ? cleanPhoneNumber(row[idxHpIbu]) : "";
+                let hpAyah = idxHpAyah !== -1 ? cleanPhoneNumber(row[idxHpAyah]) : "";
+                let hpUmum = idxHpUmum !== -1 ? cleanPhoneNumber(row[idxHpUmum]) : "";
+
+                if (!hpIbu && !hpAyah && !hpUmum) {
+                    const detectedPhones = [];
+                    for (let c = 0; c < row.length; c++) {
+                        if (c === idxNik || c === idxNama || c === idxKelasSD) continue;
+                        const candidate = cleanPhoneNumber(row[c]);
+                        if (/^(08|628|\+628)\d{7,12}$/.test(candidate)) {
+                            detectedPhones.push(candidate);
+                        }
+                    }
+                    if (detectedPhones.length === 1) {
+                        hpUmum = detectedPhones[0];
+                    } else if (detectedPhones.length >= 2) {
+                        hpAyah = detectedPhones[0];
+                        hpIbu = detectedPhones[1];
+                    }
+                }
+
+                const mainPhone = hpIbu || hpAyah || hpUmum || "";
+
+                result.push({
+                    id: "S_LIVE_" + i,
+                    nama: nama,
+                    nik: nik || "-",
+                    kelas: cleanKelasSD || "1",
+                    tingkat: gradeLevel || "1",
+                    kelasAsli: rawKelasSD || cleanKelasSD,
+                    ayah: ayah || "-",
+                    ibu: ibu || "-",
+                    hpIbu: hpIbu || mainPhone,
+                    hpAyah: hpAyah || mainPhone,
+                    hp: mainPhone
+                });
+            }
+
+            return result;
+        }
+
+        function cleanPhoneNumber(raw) {
+            if (!raw) return "";
+            let str = String(raw).replace(/^'+/, "").trim();
+            // Jika ada dua nomor dipisahkan garis miring atau koma, ambil yang pertama
+            if (str.includes("/")) str = str.split("/")[0].trim();
+            let cleaned = str.replace(/[^\d+]/g, "");
+            // Jika di spreadsheet tertulis 8123456789 (angka 0 di depan hilang karena format Number Excel)
+            if (/^8\d{8,12}$/.test(cleaned)) {
+                cleaned = "0" + cleaned;
+            }
+            return cleaned;
+        }
+
+        // =====================================================
+        // INISIALISASI SAAT HALAMAN DIMUAT
+        // =====================================================
+        window.onload = function() {
+            renderMultiClassCheckboxes();
+            syncAdminUIFromConfig();
+            renderFormTemplatesList();
+            handleConsentChange("SETUJU");
+            renderDashboard();
+            renderAttendanceSheet();
+            fetchMasterStudentSpreadsheet(false);
+            loadFromAppsScriptEnvironment();
+
+            document.addEventListener("click", function(e) {
+                const wrapper = document.getElementById("student-search-wrapper");
+                const dropdown = document.getElementById("studentDropdown");
+                if (wrapper && dropdown && !wrapper.contains(e.target)) {
+                    dropdown.classList.add("hidden");
+                }
+            });
+        };
+
+        // =====================================================
+        // FUNGSI UTAMA: MENGAMBIL SEMUA DATA ANAK DARI LINK SPREADSHEET INDUK
+        // https://docs.google.com/spreadsheets/d/e/2PACX-1vTj9NDKstrj0d9JH7PSMGc4X9ZP1JEarvqoXhF2BZcesqs52oW_jYNKd_fI832uYg/pubhtml?gid=1632329455&single=true
+        // =====================================================
+        async function fetchMasterStudentSpreadsheet(showNotif = false) {
+            const indicator = document.getElementById("db-indicator");
+            const statusText = document.getElementById("db-status-text");
+            indicator.className = "w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping";
+            statusText.textContent = "Menarik database siswa (Header: Kelas SD) dari Google Spreadsheet...";
+
+            const candidateUrls = [
+                { type: "csv", url: MASTER_CSV_URL },
+                { type: "html", url: MASTER_PUBHTML_URL },
+                { type: "csv", url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(MASTER_CSV_URL) },
+                { type: "html", url: "https://api.allorigins.win/raw?url=" + encodeURIComponent(MASTER_PUBHTML_URL) },
+                { type: "csv", url: "https://corsproxy.io/?" + encodeURIComponent(MASTER_CSV_URL) }
+            ];
+
+            for (const item of candidateUrls) {
+                try {
+                    const response = await fetch(item.url, { cache: "no-store" });
+                    if (!response.ok) continue;
+                    const text = await response.text();
+                    if (!text || text.length < 20) continue;
+
+                    let rows = [];
+                    if (item.type === "csv" && !text.trim().startsWith("<")) {
+                        rows = parseCSVToRows(text);
+                    } else {
+                        rows = parsePubhtmlTableToRows(text);
+                    }
+
+                    const parsedStudents = mapRowsToStudents(rows);
+                    if (parsedStudents.length > 0) {
+                        studentsDB = parsedStudents;
+                        indicator.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+                        statusText.textContent = `Terhubung ke Spreadsheet Induk (${studentsDB.length} Siswa - Kolom Kelas SD Aktif)`;
+                        renderMultiClassCheckboxes();
+                        renderDashboard();
+                        renderAttendanceSheet();
+                        if (showNotif) {
+                            showToast("Database Kelas SD Disinkronkan!", `${studentsDB.length} data siswa berhasil diambil menggunakan kolom Kelas SD (1A, 1B, dst).`, "success");
+                        }
+                        return;
+                    }
+                } catch (err) {
+                    // Lanjut ke kandidat URL berikutnya
+                }
+            }
+
+            indicator.className = "w-2.5 h-2.5 rounded-full bg-amber-500";
+            statusText.textContent = `API Apps Script Aktif (${studentsDB.length} Siswa Termuat)`;
+        }
+
+        // Parser CSV Lengkap
+        function parseCSVToRows(csvText) {
+            const rows = [];
+            let currentRow = [];
+            let currentVal = "";
+            let insideQuotes = false;
+
+            for (let i = 0; i < csvText.length; i++) {
+                const char = csvText[i];
+                const nextChar = csvText[i + 1];
+
+                if (char === '"') {
+                    if (insideQuotes && nextChar === '"') {
+                        currentVal += '"';
+                        i++;
+                    } else {
+                        insideQuotes = !insideQuotes;
+                    }
+                } else if (char === ',' && !insideQuotes) {
+                    currentRow.push(currentVal.trim());
+                    currentVal = "";
+                } else if ((char === '\n' || char === '\r') && !insideQuotes) {
+                    if (char === '\r' && nextChar === '\n') i++;
+                    currentRow.push(currentVal.trim());
+                    if (currentRow.some(c => c !== "")) rows.push(currentRow);
+                    currentRow = [];
+                    currentVal = "";
+                } else {
+                    currentVal += char;
+                }
+            }
+            if (currentVal || currentRow.length > 0) {
+                currentRow.push(currentVal.trim());
+                if (currentRow.some(c => c !== "")) rows.push(currentRow);
+            }
+            return rows;
+        }
+
+        // Parser Tabel HTML dari halaman pubhtml Google Spreadsheet
+        function parsePubhtmlTableToRows(htmlText) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlText, "text/html");
+            const trs = Array.from(doc.querySelectorAll("table tbody tr, table tr"));
+            const rows = [];
+            trs.forEach(tr => {
+                // Hanya ambil td/th yang bukan nomor baris otomatis Google Sheets (class row-header-shim)
+                const cells = Array.from(tr.querySelectorAll("td")).map(td => (td.textContent || "").replace(/\s+/g, " ").trim());
+                if (cells.filter(Boolean).length >= 2) {
+                    rows.push(cells);
+                }
+            });
+            return rows;
+        }
+
+        // Mengambil data dari Google Apps Script (Baik via google.script.run maupun via fetch ke URL API yang ditanamkan)
+        async function loadFromAppsScriptEnvironment() {
+            if (typeof google !== "undefined" && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function(res) {
+                        applyBackendDashboardData(res);
+                    })
+                    .getDashboardData();
+                return;
+            }
+
+            // Panggil URL API Web App Apps Script yang telah ditanamkan
+            const apiUrl = adminConfig.scriptUrl || DEFAULT_GAS_WEBAPP_URL;
+            if (apiUrl) {
+                try {
+                    const urlWithParam = apiUrl + (apiUrl.includes("?") ? "&" : "?") + "action=getInitialData";
+                    const resp = await fetch(urlWithParam, { method: "GET", redirect: "follow" });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        applyBackendDashboardData(data);
+                    }
+                } catch (e) {
+                    // Tetap berjalan normal menggunakan direct spreadsheet fetch
+                }
+            }
+        }
+
+        function applyBackendDashboardData(res) {
+            if (!res) return;
+            if (res.students && res.students.length > 0) {
+                studentsDB = res.students.map(s => ({
+                    ...s,
+                    kelas: formatDisplayKelasSD(s.kelasAsli || s.kelas),
+                    tingkat: extractGradeNumber(s.kelasAsli || s.kelas)
+                }));
+            }
+            if (res.submissions && res.submissions.length > 0) {
+                submissionsDB = res.submissions;
+            }
+            if (res.formTemplates && Array.isArray(res.formTemplates) && res.formTemplates.length > 0) {
+                formTemplatesDB = res.formTemplates;
+            }
+            if (res.adminConfig && res.adminConfig.vaccineTitle) {
+                adminConfig = { ...adminConfig, ...res.adminConfig, scriptUrl: adminConfig.scriptUrl || DEFAULT_GAS_WEBAPP_URL };
+            }
+            renderMultiClassCheckboxes();
+            syncAdminUIFromConfig();
+            renderFormTemplatesList();
+            renderDashboard();
+            renderAttendanceSheet();
+        }
+
+        // =====================================================
+        // HELPER FORMAT KELAS SD (1A, 1B, 2A, DST) & FILTER MULTI KELAS
+        // =====================================================
+        function formatDisplayKelasSD(rawKelas) {
+            const str = String(rawKelas || "").replace(/^kelas\s*(sd)?\s*/i, "").trim();
+            return str || "1";
+        }
+
+        function extractGradeNumber(rawKelas) {
+            const match = String(rawKelas || "").match(/[1-6]/);
+            return match ? match[0] : String(rawKelas || "1").trim();
+        }
+
+        function isClassAllowed(studentKelas) {
+            const exact = formatDisplayKelasSD(studentKelas).toUpperCase();
+            const grade = extractGradeNumber(studentKelas);
+            return adminConfig.targetClasses.some(t => {
+                const targetClean = String(t).toUpperCase().trim();
+                return targetClean === exact || targetClean === grade;
+            });
+        }
+
+        function formatTargetClassesLabel() {
+            const targets = adminConfig.targetClasses || [];
+            if (targets.length === 0) return "Belum Dipilih";
+            const allGrades = ["1", "2", "3", "4", "5", "6"];
+            if (allGrades.every(g => targets.includes(g))) {
+                return "Semua Kelas SD (Kelas 1 - 6)";
+            }
+            return "Kelas " + targets.join(", ") + " SD";
+        }
+
+        // Render Checkbox Pilihan Kelas SD di Menu Admin (Tingkat 1-6 + Rombel Spesifik 1A, 1B dari Database)
+        function renderMultiClassCheckboxes() {
+            const container = document.getElementById("multiClassCheckboxes");
+            if (!container) return;
+
+            const baseGrades = [
+                { val: "1", label: "Kelas 1 SD (Semua 1A, 1B..)" },
+                { val: "2", label: "Kelas 2 SD (Semua 2A, 2B..)" },
+                { val: "3", label: "Kelas 3 SD (Semua 3A, 3B..)" },
+                { val: "4", label: "Kelas 4 SD (Semua 4A, 4B..)" },
+                { val: "5", label: "Kelas 5 SD (Semua 5A, 5B..)" },
+                { val: "6", label: "Kelas 6 SD (Semua 6A, 6B..)" }
+            ];
+
+            // Ambil juga sub-kelas unik dari database (seperti 1A, 1B, 2A, 2B) jika ada
+            const uniqueSubClasses = Array.from(new Set(
+                studentsDB
+                    .map(s => formatDisplayKelasSD(s.kelas).toUpperCase())
+                    .filter(k => /^[1-6][A-Z]+$/.test(k))
+            )).sort();
+
+            let html = baseGrades.map(g => {
+                const checked = adminConfig.targetClasses.includes(g.val) ? "checked" : "";
+                return `
+                    <label class="flex items-center gap-2 p-2.5 rounded-xl bg-white border-2 border-emerald-300 cursor-pointer hover:border-emerald-600 shadow-sm">
+                        <input type="checkbox" name="targetClassCb" value="${g.val}" ${checked} class="w-4 h-4 text-emerald-600 rounded">
+                        <span class="text-xs font-extrabold text-emerald-950">${g.label}</span>
+                    </label>
+                `;
+            }).join("");
+
+            if (uniqueSubClasses.length > 0) {
+                html += uniqueSubClasses.map(sub => {
+                    const checked = adminConfig.targetClasses.includes(sub) ? "checked" : "";
+                    return `
+                        <label class="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50/70 border-2 border-amber-300 cursor-pointer hover:border-amber-500 shadow-sm">
+                            <input type="checkbox" name="targetClassCb" value="${escapeHtml(sub)}" ${checked} class="w-4 h-4 text-amber-600 rounded">
+                            <span class="text-xs font-extrabold text-amber-950">Khusus Rombel ${escapeHtml(sub)}</span>
+                        </label>
+                    `;
+                }).join("");
+            }
+
+            container.innerHTML = html;
+        }
+
+        // =====================================================
+        // PENCARIAN OTOMATIS SISWA + TAMPILKAN KELAS SD (1A, 1B, DST)
+        // =====================================================
+        function handleSearchStudent(query) {
+            const dropdown = document.getElementById("studentDropdown");
+            const cleanQuery = (query || "").trim().toLowerCase();
+
+            const matches = studentsDB.filter(s => {
+                if (!cleanQuery) return true;
+                return s.nama.toLowerCase().includes(cleanQuery) ||
+                       (s.nik && s.nik.toLowerCase().includes(cleanQuery)) ||
+                       (s.kelas && s.kelas.toLowerCase().includes(cleanQuery)) ||
+                       s.ayah.toLowerCase().includes(cleanQuery) ||
+                       s.ibu.toLowerCase().includes(cleanQuery);
+            });
+
+            if (matches.length === 0) {
+                dropdown.innerHTML = `
+                    <div class="p-4 text-center text-xs text-slate-500 font-semibold">
+                        Nama siswa/santri <strong>"${escapeHtml(query)}"</strong> tidak ditemukan.
+                    </div>
+                `;
+                dropdown.classList.remove("hidden");
+                return;
+            }
+
+            matches.sort((a, b) => {
+                const aOk = isClassAllowed(a.kelas) ? 0 : 1;
+                const bOk = isClassAllowed(b.kelas) ? 0 : 1;
+                if (aOk !== bOk) return aOk - bOk;
+                return a.nama.localeCompare(b.nama);
+            });
+
+            dropdown.innerHTML = matches.slice(0, 35).map(student => {
+                const allowed = isClassAllowed(student.kelas);
+                const alreadySub = submissionsDB.find(sub =>
+                    sub.nama.toLowerCase() === student.nama.toLowerCase() &&
+                    (!sub.formId || sub.formId === adminConfig.activeFormId)
+                );
+
+                if (allowed) {
+                    return `
+                        <div onclick="selectStudentById('${student.id}')" class="p-3.5 hover:bg-emerald-50 cursor-pointer transition-colors flex items-center justify-between gap-3">
+                            <div>
+                                <div class="font-extrabold text-sm text-emerald-950 flex flex-wrap items-center gap-1.5">
+                                    <span>${escapeHtml(student.nama)}</span>
+                                    ${alreadySub ? `<span class="px-2 py-0.5 text-[10px] rounded-full bg-amber-200 text-amber-950 font-extrabold">Sudah Isi (${alreadySub.status})</span>` : ''}
+                                </div>
+                                <div class="text-[11px] text-slate-600 mt-0.5">
+                                    NIK: <span class="font-mono font-bold">${escapeHtml(student.nik || '-')}</span> &bull;
+                                    Ayah: <strong>${escapeHtml(student.ayah)}</strong> &bull; Ibu: <strong>${escapeHtml(student.ibu)}</strong>
+                                </div>
+                            </div>
+                            <span class="shrink-0 px-3 py-1 rounded-xl bg-emerald-600 text-amber-200 font-extrabold text-xs shadow-sm">
+                                Kelas SD: ${escapeHtml(student.kelas)}
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div onclick="notifyRestrictedClass('${escapeHtml(student.nama)}', '${escapeHtml(student.kelas)}')" class="p-3.5 bg-slate-100/90 opacity-65 cursor-not-allowed flex items-center justify-between gap-3">
+                            <div>
+                                <div class="font-bold text-sm text-slate-500 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-lock text-rose-500 text-xs"></i>
+                                    <span>${escapeHtml(student.nama)}</span>
+                                </div>
+                                <div class="text-[11px] text-rose-600 font-semibold mt-0.5">
+                                    Terkunci: Form saat ini hanya untuk ${formatTargetClassesLabel()}
+                                </div>
+                            </div>
+                            <span class="shrink-0 px-2.5 py-1 rounded-xl bg-slate-200 text-slate-600 font-bold text-xs">
+                                Kelas SD: ${escapeHtml(student.kelas)}
+                            </span>
+                        </div>
+                    `;
+                }
+            }).join("");
+
+            dropdown.classList.remove("hidden");
+        }
+
+        function notifyRestrictedClass(nama, kelas) {
+            showToast(
+                "Kelas SD Tidak Termasuk Sasaran Aktif",
+                `Ananda ${nama} berada di Kelas SD ${kelas}. Saat ini form hanya dibuka untuk ${formatTargetClassesLabel()}.`,
+                "error"
+            );
+        }
+
+        function selectStudentById(studentId) {
+            const student = studentsDB.find(s => s.id === studentId);
+            if (!student) return;
+
+            if (!isClassAllowed(student.kelas)) {
+                notifyRestrictedClass(student.nama, student.kelas);
+                return;
+            }
+
+            selectedStudent = student;
+            document.getElementById("studentSearchInput").value = student.nama;
+            document.getElementById("clearStudentBtn").classList.remove("hidden");
+            document.getElementById("studentDropdown").classList.add("hidden");
+
+            document.getElementById("autoKelas").value = student.kelas;
+            document.getElementById("autoNik").value = student.nik || "-";
+            document.getElementById("autoAyah").value = student.ayah;
+            document.getElementById("autoIbu").value = student.ibu;
+
+            // Langsung isi otomatis Nomor HP dari Database sesuai Ibu / Ayah yang ada
+            handleRepresentativePhoneAutoFill();
+
+            const statusBadge = document.getElementById("student-selected-status");
+            statusBadge.textContent = `Kelas SD: ${student.kelas} | NIK & No. HP Terisi Otomatis`;
+            statusBadge.className = "text-[11px] font-extrabold text-emerald-900 bg-emerald-200 border border-emerald-400 px-2.5 py-0.5 rounded-full";
+        }
+
+        // Mengisi Nomor HP otomatis berdasarkan pilihan "Diisi Oleh (Ibu / Ayah)" atau yang tersedia di Database
+        function handleRepresentativePhoneAutoFill() {
+            if (!selectedStudent) return;
+            const rep = document.getElementById("parentRepresentative").value;
+            const phoneInput = document.getElementById("parentPhone");
+            const badge = document.getElementById("autoPhoneBadge");
+
+            let chosenPhone = "";
+            let sourceLabel = "Database";
+
+            if (rep === "Ibu") {
+                if (selectedStudent.hpIbu) {
+                    chosenPhone = selectedStudent.hpIbu;
+                    sourceLabel = "No. HP Ibu (Database)";
+                } else if (selectedStudent.hpAyah) {
+                    chosenPhone = selectedStudent.hpAyah;
+                    sourceLabel = "No. HP Ayah (Database)";
+                } else if (selectedStudent.hp) {
+                    chosenPhone = selectedStudent.hp;
+                    sourceLabel = "No. HP Ortu (Database)";
+                }
+            } else if (rep === "Ayah") {
+                if (selectedStudent.hpAyah) {
+                    chosenPhone = selectedStudent.hpAyah;
+                    sourceLabel = "No. HP Ayah (Database)";
+                } else if (selectedStudent.hpIbu) {
+                    chosenPhone = selectedStudent.hpIbu;
+                    sourceLabel = "No. HP Ibu (Database)";
+                } else if (selectedStudent.hp) {
+                    chosenPhone = selectedStudent.hp;
+                    sourceLabel = "No. HP Ortu (Database)";
+                }
+            } else {
+                chosenPhone = selectedStudent.hp || selectedStudent.hpIbu || selectedStudent.hpAyah || "";
+                sourceLabel = "No. HP Wali (Database)";
+            }
+
+            if (chosenPhone) {
+                phoneInput.value = chosenPhone;
+                if (badge) {
+                    badge.textContent = sourceLabel;
+                    badge.className = "text-[10px] font-extrabold text-emerald-900 bg-emerald-200 border border-emerald-400 px-2 py-0.5 rounded-full";
+                }
+            } else {
+                if (badge) {
+                    badge.textContent = "Silakan isi manual";
+                    badge.className = "text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full";
+                }
+            }
+        }
+
+        function clearSelectedStudent() {
+            selectedStudent = null;
+            document.getElementById("studentSearchInput").value = "";
+            document.getElementById("clearStudentBtn").classList.add("hidden");
+            document.getElementById("autoKelas").value = "";
+            document.getElementById("autoNik").value = "";
+            document.getElementById("autoAyah").value = "";
+            document.getElementById("autoIbu").value = "";
+            document.getElementById("parentPhone").value = "";
+
+            const statusBadge = document.getElementById("student-selected-status");
+            statusBadge.textContent = "Belum dipilih";
+            statusBadge.className = "text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full";
+        }
+
+        // =====================================================
+        // INTERAKSI PILIHAN SETUJU / TIDAK SETUJU
+        // =====================================================
+        function handleConsentChange(status) {
+            const cardSetuju = document.getElementById("card-setuju");
+            const cardTidak = document.getElementById("card-tidak");
+            const reasonLabel = document.getElementById("reasonLabel");
+            const chipsContainer = document.getElementById("reasonQuickChips");
+            const disclaimerTextDisplay = document.getElementById("disclaimerTextDisplay");
+
+            if (status === "SETUJU") {
+                cardSetuju.className = "relative flex items-start p-4 rounded-2xl border-2 border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 cursor-pointer transition-all shadow-md shadow-emerald-500/20";
+                cardTidak.className = "relative flex items-start p-4 rounded-2xl border-2 border-amber-200 bg-white hover:bg-amber-50/40 cursor-pointer transition-all";
+                reasonLabel.innerHTML = `Alasan Setuju Mengikuti Vaksinasi <span class="text-rose-500">*</span>`;
+                disclaimerTextDisplay.textContent = `Dengan menyetujui vaksinasi ini, orang tua memberikan izin kepada petugas kesehatan Puskesmas/UKS untuk melaksanakan imunisasi sesuai SOP medis. (${adminConfig.disclaimerText})`;
+            } else {
+                cardTidak.className = "relative flex items-start p-4 rounded-2xl border-2 border-rose-500 bg-gradient-to-br from-rose-50 to-amber-50 cursor-pointer transition-all shadow-md shadow-rose-500/20";
+                cardSetuju.className = "relative flex items-start p-4 rounded-2xl border-2 border-emerald-200 bg-white hover:bg-emerald-50/40 cursor-pointer transition-all";
+                reasonLabel.innerHTML = `Alasan TIDAK SETUJU / Menolak Vaksinasi <span class="text-rose-500">*</span>`;
+                disclaimerTextDisplay.textContent = adminConfig.disclaimerText;
+            }
+
+            const reasons = QUICK_REASONS[status] || [];
+            chipsContainer.innerHTML = reasons.map(r => `
+                <button type="button" onclick="setReasonText('${escapeHtml(r)}')" class="text-[11px] font-bold bg-emerald-50 hover:bg-amber-200 text-emerald-900 border border-emerald-300 px-3 py-1.5 rounded-xl transition-colors text-left">
+                    + ${escapeHtml(r)}
+                </button>
+            `).join("");
+        }
+
+        function setReasonText(text) {
+            document.getElementById("consentReason").value = text;
+        }
+
+        // =====================================================
+        // SUBMIT FORM PERSETUJUAN ORANG TUA
+        // =====================================================
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            if (!selectedStudent) {
+                showToast("Nama Siswa Belum Dipilih", "Silakan cari dan klik nama siswa terlebih dahulu agar biodata orang tua & kelas terisi otomatis.", "error");
+                document.getElementById("studentSearchInput").focus();
+                return;
+            }
+
+            if (!isClassAllowed(selectedStudent.kelas)) {
+                notifyRestrictedClass(selectedStudent.nama, selectedStudent.kelas);
+                return;
+            }
+
+            const consentStatus = document.querySelector('input[name="consentStatus"]:checked').value;
+            const qHealthy = document.querySelector('input[name="q_healthy"]:checked').value;
+            const qAllergy = document.querySelector('input[name="q_allergy"]:checked').value;
+            const reason = document.getElementById("consentReason").value.trim();
+            const phone = document.getElementById("parentPhone").value.trim();
+            const representative = document.getElementById("parentRepresentative").value;
+
+            const now = new Date();
+            const formattedTime = now.toLocaleDateString("id-ID") + " " + now.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' });
+
+            const payload = {
+                studentId: selectedStudent.id,
+                nama: selectedStudent.nama,
+                nik: selectedStudent.nik || "-",
+                kelas: selectedStudent.kelas,
+                ayah: selectedStudent.ayah,
+                ibu: selectedStudent.ibu,
+                perwakilan: representative,
+                telepon: phone,
+                kondisiSehat: qHealthy,
+                riwayatAlergi: qAllergy,
+                status: consentStatus,
+                alasan: reason,
+                pernyataanDisetujui: true,
+                programVaksin: adminConfig.vaccineTitle,
+                formId: adminConfig.activeFormId || "FORM_DEFAULT",
+                waktu: formattedTime
+            };
+
+            const existingIndex = submissionsDB.findIndex(s =>
+                s.nama.toLowerCase() === selectedStudent.nama.toLowerCase() &&
+                (!s.formId || s.formId === payload.formId)
+            );
+            if (existingIndex !== -1) {
+                submissionsDB[existingIndex] = payload;
+            } else {
+                submissionsDB.unshift(payload);
+            }
+
+            // Simpan ke Google Apps Script (Baik via google.script.run maupun via API Web App yang ditanamkan)
+            const targetApiUrl = adminConfig.scriptUrl || DEFAULT_GAS_WEBAPP_URL;
+            if (typeof google !== "undefined" && google.script && google.script.run) {
+                google.script.run.saveConsentSubmission(payload);
+            } else if (targetApiUrl) {
+                fetch(targetApiUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "submitConsent", data: payload })
+                }).catch(() => {});
+            }
+
+            clearSelectedStudent();
+            document.getElementById("vaccineConsentForm").reset();
+            handleConsentChange("SETUJU");
+            renderDashboard();
+            renderAttendanceSheet();
+
+            // Tampilkan Popup Modal Besar Khusus Orang Tua (Hijau jika Setuju, Silang Merah jika Tidak Setuju)
+            openParentSubmissionPopup(payload);
+        }
+
+        // =====================================================
+        // POPUP MODAL KONFIRMASI ORANG TUA SETELAH KIRIM FORM
+        // =====================================================
+        function openParentSubmissionPopup(payload) {
+            const modal = document.getElementById("parentSubmissionPopup");
+            const card = document.getElementById("parentPopupCard");
+            const iconWrap = document.getElementById("parentPopupIconWrap");
+            const badge = document.getElementById("parentPopupBadge");
+            const title = document.getElementById("parentPopupTitle");
+            const subtitle = document.getElementById("parentPopupSubtitle");
+            const details = document.getElementById("parentPopupDetails");
+            const footerNote = document.getElementById("parentPopupFooterNote");
+            const closeBtn = document.getElementById("parentPopupCloseBtn");
+
+            const isAgreed = payload.status === "SETUJU";
+
+            if (isAgreed) {
+                card.className = "rounded-3xl max-w-md w-full p-6 sm:p-7 bg-white text-center space-y-4 animate-fade border-4 border-emerald-500 shadow-[0_20px_50px_rgba(16,185,129,0.4)]";
+                iconWrap.className = "w-24 h-24 rounded-full mx-auto flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-600 text-amber-300 shadow-lg shadow-emerald-500/40 border-4 border-amber-300";
+                iconWrap.innerHTML = `<i class="fa-solid fa-check text-5xl"></i>`;
+
+                badge.className = "inline-block px-3.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-400";
+                badge.textContent = "STATUS: SETUJU DIVAKSIN";
+
+                title.className = "text-xl sm:text-2xl font-extrabold text-emerald-900 leading-tight";
+                title.textContent = "Selamat! Anda Telah Menyetujui Vaksin";
+
+                subtitle.textContent = "Terima kasih Ayah/Bunda atas dukungannya dalam menjaga kesehatan dan kekebalan tubuh ananda di sekolah.";
+
+                footerNote.className = "p-3.5 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 bg-emerald-50 text-emerald-900 border-2 border-emerald-300";
+                footerNote.innerHTML = `<i class="fa-solid fa-paper-plane text-emerald-600 text-base"></i><span>Data persetujuan vaksin telah berhasil dikirim ke sekolah.</span>`;
+
+                closeBtn.className = "w-full py-3.5 px-6 rounded-2xl font-extrabold text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-lg transition-all";
+            } else {
+                card.className = "rounded-3xl max-w-md w-full p-6 sm:p-7 bg-white text-center space-y-4 animate-fade border-4 border-rose-600 shadow-[0_20px_50px_rgba(225,29,72,0.45)]";
+                iconWrap.className = "w-24 h-24 rounded-full mx-auto flex items-center justify-center bg-gradient-to-br from-rose-600 to-red-700 text-white shadow-lg shadow-rose-600/40 border-4 border-rose-200";
+                iconWrap.innerHTML = `<i class="fa-solid fa-xmark text-5xl"></i>`;
+
+                badge.className = "inline-block px-3.5 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider bg-rose-100 text-rose-900 border border-rose-400";
+                badge.textContent = "STATUS: MENOLAK / TIDAK SETUJU VAKSIN";
+
+                title.className = "text-xl sm:text-2xl font-extrabold text-rose-700 leading-tight";
+                title.textContent = "Anda Menolak Untuk Vaksin";
+
+                subtitle.textContent = "Pernyataan penolakan vaksinasi beserta pertanggungjawaban orang tua telah dicatat oleh sistem.";
+
+                footerNote.className = "p-3.5 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 bg-rose-50 text-rose-900 border-2 border-rose-300";
+                footerNote.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-600 text-base"></i><span>Keterangan & data penolakan telah dikirim ke pihak sekolah.</span>`;
+
+                closeBtn.className = "w-full py-3.5 px-6 rounded-2xl font-extrabold text-sm text-white bg-gradient-to-r from-rose-600 to-red-700 hover:from-rose-700 hover:to-red-800 shadow-lg transition-all";
+            }
+
+            details.innerHTML = `
+                <div class="flex justify-between border-b border-slate-200 pb-1.5">
+                    <span class="text-slate-500 font-semibold">Nama Siswa:</span>
+                    <span class="font-extrabold text-slate-900">${escapeHtml(payload.nama)}</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-200 pb-1.5">
+                    <span class="text-slate-500 font-semibold">NIK Siswa:</span>
+                    <span class="font-mono font-bold text-slate-800">${escapeHtml(payload.nik)}</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-200 pb-1.5">
+                    <span class="text-slate-500 font-semibold">Kelas SD:</span>
+                    <span class="font-extrabold text-emerald-800">Kelas ${escapeHtml(payload.kelas)}</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-200 pb-1.5">
+                    <span class="text-slate-500 font-semibold">Orang Tua (${escapeHtml(payload.perwakilan)}):</span>
+                    <span class="font-bold text-slate-800">${escapeHtml(payload.ayah)} / ${escapeHtml(payload.ibu)}</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-200 pb-1.5">
+                    <span class="text-slate-500 font-semibold">Nomor HP/WA:</span>
+                    <span class="font-mono font-bold text-slate-800">${escapeHtml(payload.telepon)}</span>
+                </div>
+                <div class="pt-1">
+                    <span class="text-slate-500 font-semibold block">Alasan Orang Tua:</span>
+                    <span class="font-bold text-slate-800">${escapeHtml(payload.alasan)}</span>
+                </div>
+            `;
+
+            modal.classList.remove("hidden");
+        }
+
+        function closeParentSubmissionPopup() {
+            document.getElementById("parentSubmissionPopup").classList.add("hidden");
+        }
+
+        // =====================================================
+        // UNDUH FILE PDF & PREVIEW PDF KE TAB BARU (ABSEN & REKAP)
+        // =====================================================
+        function generatePDFDocument(sourceType = "absen", mode = "download") {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showToast("Pustaka PDF Sedang Dimuat", "Mohon tunggu 2 detik atau gunakan tombol Print Langsung.", "error");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: sourceType === "dashboard" ? "landscape" : "portrait",
+                unit: "mm",
+                format: "a4"
+            });
+
+            const filterElId = sourceType === "absen" ? "absenClassFilter" : "dashClassFilter";
+            const classFilter = document.getElementById(filterElId) ? document.getElementById(filterElId).value : "ACTIVE_TARGET";
+            const statusFilter = sourceType === "absen"
+                ? (document.getElementById("absenStatusFilter")?.value || "ALL")
+                : currentTableStatusFilter;
+
+            const classBadgeText = classFilter === "ACTIVE_TARGET"
+                ? formatTargetClassesLabel()
+                : (classFilter === "ALL" ? "Semua Kelas SD" : `Kelas ${classFilter} SD`);
+
+            const targetStudents = getStudentsByFilterSelect(classFilter);
+            const merged = targetStudents.map(s => {
+                const sub = submissionsDB.find(item =>
+                    item.nama.toLowerCase() === s.nama.toLowerCase() &&
+                    (!item.formId || item.formId === adminConfig.activeFormId || item.programVaksin === adminConfig.vaccineTitle)
+                );
+                return {
+                    ...s,
+                    status: sub ? sub.status : "BELUM MENGISI",
+                    alasan: sub ? sub.alasan : "-",
+                    telepon: sub ? sub.telepon : (s.hp || s.hpIbu || s.hpAyah || "-"),
+                    kondisi: sub ? sub.kondisiSehat : "-"
+                };
+            }).filter(m => {
+                if (statusFilter === "ALL") return true;
+                if (statusFilter === "BELUM") return m.status === "BELUM MENGISI";
+                return m.status === statusFilter;
+            });
+
+            // Header Dokumen PDF Resmi
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(13);
+            doc.setTextColor(6, 78, 59);
+            doc.text(
+                sourceType === "absen"
+                    ? "DAFTAR ABSENSI & PERSETUJUAN VAKSINASI SISWA / SANTRI SD"
+                    : "LAPORAN REKAPITULASI PERSETUJUAN VAKSINASI SISWA SD",
+                14,
+                15
+            );
+
+            doc.setFontSize(10);
+            doc.setTextColor(30, 41, 59);
+            doc.text(`Program: ${adminConfig.vaccineTitle}`, 14, 21);
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            doc.text(`Jadwal: ${adminConfig.schedule}   |   Sasaran: ${classBadgeText}`, 14, 26);
+
+            const total = merged.length;
+            const setuju = merged.filter(x => x.status === "SETUJU").length;
+            const tolak = merged.filter(x => x.status === "TIDAK SETUJU").length;
+            const belum = merged.filter(x => x.status === "BELUM MENGISI").length;
+            doc.text(`Total Siswa: ${total}   |   Setuju Vaksin: ${setuju}   |   Tidak Setuju: ${tolak}   |   Belum Isi: ${belum}`, 14, 31);
+
+            if (sourceType === "absen") {
+                const tableBody = merged.map((item, idx) => [
+                    idx + 1,
+                    item.nama,
+                    item.nik || "-",
+                    item.kelas,
+                    item.status,
+                    "[     ] Hadir",
+                    item.status === "TIDAK SETUJU" ? `Tolak: ${item.alasan}` : ""
+                ]);
+
+                doc.autoTable({
+                    startY: 35,
+                    head: [["No", "Nama Siswa / Santri", "NIK (Nomor Induk)", "Kelas SD", "Status Vaksin", "Ceklis Vaksin", "Keterangan / Paraf"]],
+                    body: tableBody,
+                    theme: "grid",
+                    headStyles: { fillColor: [4, 120, 87], textColor: [254, 240, 138], fontStyle: "bold", fontSize: 8.5 },
+                    bodyStyles: { fontSize: 8, textColor: [15, 23, 42] },
+                    columnStyles: {
+                        0: { halign: "center", cellWidth: 10 },
+                        2: { cellWidth: 34 },
+                        3: { halign: "center", cellWidth: 18 },
+                        4: { halign: "center", cellWidth: 27 },
+                        5: { halign: "center", cellWidth: 22 }
+                    },
+                    didParseCell: function(data) {
+                        if (data.section === "body" && data.column.index === 4) {
+                            const val = String(data.cell.raw || "");
+                            if (val === "SETUJU") {
+                                data.cell.styles.textColor = [4, 120, 87];
+                                data.cell.styles.fontStyle = "bold";
+                            } else if (val === "TIDAK SETUJU") {
+                                data.cell.styles.textColor = [190, 18, 60];
+                                data.cell.styles.fontStyle = "bold";
+                            }
+                        }
+                    }
+                });
+            } else {
+                const tableBody = merged.map((item, idx) => [
+                    idx + 1,
+                    item.nama,
+                    item.nik || "-",
+                    item.kelas,
+                    `${item.ayah} / ${item.ibu}`,
+                    item.telepon || "-",
+                    item.status,
+                    item.alasan || "-"
+                ]);
+
+                doc.autoTable({
+                    startY: 35,
+                    head: [["No", "Nama Siswa", "NIK Siswa", "Kelas SD", "Orang Tua (Ayah / Ibu)", "No. HP/WA", "Status Vaksin", "Alasan & Keterangan"]],
+                    body: tableBody,
+                    theme: "grid",
+                    headStyles: { fillColor: [4, 120, 87], textColor: [254, 240, 138], fontStyle: "bold", fontSize: 8.5 },
+                    bodyStyles: { fontSize: 8, textColor: [15, 23, 42] }
+                });
+            }
+
+            // Tanda Tangan Petugas di Bawah Tabel PDF
+            const finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 12 : 180;
+            if (finalY < 250) {
+                doc.setFontSize(9);
+                doc.text("Mengetahui,", 25, finalY);
+                doc.text("Kepala Sekolah / Koordinator UKS", 25, finalY + 5);
+                doc.text("( .................................................. )", 25, finalY + 24);
+
+                const rightX = sourceType === "dashboard" ? 210 : 130;
+                doc.text("Petugas Kesehatan / Vaksinator,", rightX, finalY);
+                doc.text("Puskesmas / Tenaga Medis", rightX, finalY + 5);
+                doc.text("( .................................................. )", rightX, finalY + 24);
+            }
+
+            const fileName = `${sourceType === 'absen' ? 'Absen_Petugas_Vaksin' : 'Rekap_Dashboard_Vaksin'}_Kelas_${classFilter}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+            if (mode === "preview") {
+                const blobUrl = doc.output("bloburl");
+                const newWin = window.open(blobUrl, "_blank");
+                if (!newWin) {
+                    doc.save(fileName);
+                    showToast("File PDF Diunduh", "Pop-up tab baru diblokir browser, sehingga file PDF langsung diunduh ke perangkat Anda.", "info");
+                } else {
+                    showToast("Preview PDF Dibuka", "Dokumen PDF berhasil dibuka di tab baru.", "success");
+                }
+            } else {
+                doc.save(fileName);
+                showToast("PDF Berhasil Diunduh!", `File "${fileName}" telah tersimpan di perangkat Anda.`, "success");
+            }
+        }
+
+        // =====================================================
+        // RENDER DASHBOARD MONITORING ADMIN
+        // =====================================================
+        function setTableStatusFilter(filterVal) {
+            currentTableStatusFilter = filterVal;
+            const buttons = ["ALL", "SETUJU", "TIDAK SETUJU", "BELUM"];
+            buttons.forEach(btn => {
+                const el = document.getElementById(`filter-btn-${btn}`);
+                if (!el) return;
+                if (btn === filterVal) {
+                    el.className = "px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-700 text-white shadow-sm transition-all";
+                } else {
+                    el.className = "px-3 py-1.5 rounded-xl text-xs font-extrabold text-slate-600 hover:bg-emerald-50 transition-all";
+                }
+            });
+            renderDashboard();
+        }
+
+        function getStudentsByFilterSelect(selectValue) {
+            return studentsDB.filter(s => {
+                const exact = formatDisplayKelasSD(s.kelas).toUpperCase();
+                const grade = extractGradeNumber(s.kelas);
+                if (selectValue === "ALL") return true;
+                if (selectValue === "ACTIVE_TARGET") return isClassAllowed(s.kelas);
+                return exact === String(selectValue).toUpperCase() || grade === String(selectValue);
+            });
+        }
+
+        function renderDashboard() {
+            const dashFilterSelect = document.getElementById("dashClassFilter").value;
+            const dashFormSelect = document.getElementById("dashFormFilter") ? document.getElementById("dashFormFilter").value : "ACTIVE_FORM";
+            const searchQuery = (document.getElementById("tableSearchInput").value || "").trim().toLowerCase();
+
+            const targetStudents = getStudentsByFilterSelect(dashFilterSelect);
+
+            const mergedList = targetStudents.map(student => {
+                const sub = submissionsDB.find(item => {
+                    const sameName = item.nama.toLowerCase() === student.nama.toLowerCase();
+                    if (!sameName) return false;
+                    if (dashFormSelect === "ALL_FORMS" || !dashFormSelect) return true;
+                    if (dashFormSelect === "ACTIVE_FORM") {
+                        return !item.formId || item.formId === adminConfig.activeFormId || item.programVaksin === adminConfig.vaccineTitle;
+                    }
+                    return item.formId === dashFormSelect;
+                });
+                return {
+                    ...student,
+                    submission: sub || null,
+                    status: sub ? sub.status : "BELUM"
+                };
+            });
+
+            const totalTarget = mergedList.length;
+            const agreedCount = mergedList.filter(item => item.status === "SETUJU").length;
+            const declinedCount = mergedList.filter(item => item.status === "TIDAK SETUJU").length;
+            const filledCount = agreedCount + declinedCount;
+            const unfilledCount = Math.max(0, totalTarget - filledCount);
+            const pctFilled = totalTarget > 0 ? Math.round((filledCount / totalTarget) * 100) : 0;
+
+            document.getElementById("stat-total").textContent = totalTarget;
+            document.getElementById("stat-class-label").textContent = dashFilterSelect === "ACTIVE_TARGET"
+                ? formatTargetClassesLabel()
+                : (dashFilterSelect === "ALL" ? "Semua Kelas SD" : `Kelas ${dashFilterSelect} SD`);
+            document.getElementById("stat-filled").textContent = filledCount;
+            document.getElementById("stat-progress-pct").textContent = `${pctFilled}% Terisi`;
+            document.getElementById("stat-unfilled").textContent = unfilledCount;
+            document.getElementById("stat-agreed").textContent = agreedCount;
+            document.getElementById("stat-declined").textContent = declinedCount;
+
+            const pctAgreed = totalTarget > 0 ? (agreedCount / totalTarget) * 100 : 0;
+            const pctDeclined = totalTarget > 0 ? (declinedCount / totalTarget) * 100 : 0;
+            document.getElementById("bar-agreed").style.width = `${pctAgreed}%`;
+            document.getElementById("bar-declined").style.width = `${pctDeclined}%`;
+            document.getElementById("progress-detail-text").textContent = `${filledCount} dari ${totalTarget} siswa telah mengisi (${unfilledCount} belum mengisi)`;
+
+            const badgeStatus = document.getElementById("progress-status-badge");
+            if (totalTarget > 0 && unfilledCount === 0) {
+                badgeStatus.textContent = "SUDAH DIISI SEMUA (100% LENGKAP)";
+                badgeStatus.className = "px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-200 text-emerald-950 border border-emerald-500";
+            } else {
+                badgeStatus.textContent = `BELUM DIISI SEMUA (${unfilledCount} Belum Mengisi)`;
+                badgeStatus.className = "px-3 py-1 rounded-full text-xs font-extrabold bg-amber-200 text-amber-950 border border-amber-500";
+            }
+
+            const filteredRows = mergedList.filter(item => {
+                if (currentTableStatusFilter !== "ALL" && item.status !== currentTableStatusFilter) return false;
+                if (searchQuery) {
+                    return item.nama.toLowerCase().includes(searchQuery) ||
+                           (item.nik && item.nik.toLowerCase().includes(searchQuery)) ||
+                           (item.kelas && item.kelas.toLowerCase().includes(searchQuery)) ||
+                           item.ayah.toLowerCase().includes(searchQuery) ||
+                           item.ibu.toLowerCase().includes(searchQuery);
+                }
+                return true;
+            });
+
+            const tbody = document.getElementById("dashboardTableBody");
+            if (filteredRows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 font-semibold text-xs">Tidak ada data siswa yang cocok dengan filter.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredRows.map((item, idx) => {
+                let badge = "";
+                if (item.status === "SETUJU") {
+                    badge = `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-check"></i> SETUJU</span>`;
+                } else if (item.status === "TIDAK SETUJU") {
+                    badge = `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-rose-100 text-rose-800 border border-rose-300"><i class="fa-solid fa-xmark"></i> TIDAK SETUJU</span>`;
+                } else {
+                    badge = `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800 border border-amber-300"><i class="fa-regular fa-clock"></i> BELUM ISI</span>`;
+                }
+
+                const sub = item.submission;
+                return `
+                    <tr class="hover:bg-emerald-50/50 transition-colors">
+                        <td class="py-3.5 px-4 font-bold text-slate-400">${idx + 1}</td>
+                        <td class="py-3.5 px-4">
+                            <div class="font-extrabold text-emerald-950">${escapeHtml(item.nama)}</div>
+                            <div class="text-[11px] font-mono text-slate-500">NIK: ${escapeHtml(item.nik || '-')}</div>
+                        </td>
+                        <td class="py-3.5 px-4">
+                            <span class="px-2.5 py-1 rounded-lg bg-amber-100 border border-amber-300 text-emerald-950 font-extrabold text-xs">${escapeHtml(item.kelas)}</span>
+                        </td>
+                        <td class="py-3.5 px-4 text-xs">
+                            <div>Ayah: <strong>${escapeHtml(item.ayah)}</strong></div>
+                            <div>Ibu: <strong>${escapeHtml(item.ibu)}</strong></div>
+                        </td>
+                        <td class="py-3.5 px-4">${badge}</td>
+                        <td class="py-3.5 px-4 max-w-xs text-xs">
+                            ${sub ? `<div class="font-semibold text-slate-800">${escapeHtml(sub.alasan)}</div><div class="text-[11px] text-emerald-700">${escapeHtml(sub.kondisiSehat)} &bull; WA: ${escapeHtml(sub.telepon)}</div>` : `<span class="text-slate-400 italic">Menunggu konfirmasi orang tua</span>`}
+                        </td>
+                        <td class="py-3.5 px-4 text-right">
+                            ${sub 
+                                ? `<button onclick="deleteSubmission('${escapeHtml(item.nama)}')" class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs">Reset</button>`
+                                : `<button onclick="quickFillFromDashboard('${item.id}')" class="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs">Isi</button>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        // =====================================================
+        // RENDER MENU CETAK ABSEN PETUGAS VAKSIN
+        // (No | Nama Siswa | NIK | Kelas SD | Setuju/Tidak Setuju Vaksin)
+        // =====================================================
+        function renderAttendanceSheet() {
+            const classFilter = document.getElementById("absenClassFilter").value;
+            const statusFilter = document.getElementById("absenStatusFilter").value;
+
+            document.getElementById("print-program-title").textContent = adminConfig.vaccineTitle;
+            document.getElementById("print-schedule-info").textContent = `Jadwal Pelaksanaan: ${adminConfig.schedule}`;
+            document.getElementById("print-class-badge").textContent = classFilter === "ACTIVE_TARGET"
+                ? formatTargetClassesLabel()
+                : (classFilter === "ALL" ? "Semua Kelas SD" : `Kelas ${classFilter} SD`);
+
+            const targetStudents = getStudentsByFilterSelect(classFilter);
+
+            const merged = targetStudents.map(s => {
+                const sub = submissionsDB.find(item =>
+                    item.nama.toLowerCase() === s.nama.toLowerCase() &&
+                    (!item.formId || item.formId === adminConfig.activeFormId || item.programVaksin === adminConfig.vaccineTitle)
+                );
+                return {
+                    ...s,
+                    status: sub ? sub.status : "BELUM MENGISI",
+                    alasan: sub ? sub.alasan : ""
+                };
+            });
+
+            document.getElementById("absen-count-total").textContent = merged.length;
+            document.getElementById("absen-count-agreed").textContent = merged.filter(m => m.status === "SETUJU").length;
+            document.getElementById("absen-count-declined").textContent = merged.filter(m => m.status === "TIDAK SETUJU").length;
+            document.getElementById("absen-count-unfilled").textContent = merged.filter(m => m.status === "BELUM MENGISI").length;
+
+            const filtered = merged.filter(m => {
+                if (statusFilter === "ALL") return true;
+                return m.status === statusFilter;
+            });
+
+            const tbody = document.getElementById("attendanceTableBody");
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-slate-400 font-bold">Tidak ada siswa pada filter absensi ini.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map((item, idx) => {
+                let statusText = "";
+                if (item.status === "SETUJU") {
+                    statusText = `<span class="font-extrabold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-md border border-emerald-400">SETUJU VAKSIN</span>`;
+                } else if (item.status === "TIDAK SETUJU") {
+                    statusText = `<span class="font-extrabold text-rose-800 bg-rose-100 px-2.5 py-0.5 rounded-md border border-rose-400">TIDAK SETUJU</span>`;
+                } else {
+                    statusText = `<span class="font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-md border border-amber-400">BELUM ISI FORM</span>`;
+                }
+
+                return `
+                    <tr class="border-b border-slate-300">
+                        <td class="py-2.5 px-3 border border-slate-300 text-center font-bold">${idx + 1}</td>
+                        <td class="py-2.5 px-3 border border-slate-300 font-extrabold text-slate-900">${escapeHtml(item.nama)}</td>
+                        <td class="py-2.5 px-3 border border-slate-300 font-mono text-xs font-semibold">${escapeHtml(item.nik || '-')}</td>
+                        <td class="py-2.5 px-3 border border-slate-300 text-center font-bold">${escapeHtml(item.kelas)}</td>
+                        <td class="py-2.5 px-3 border border-slate-300 text-center">${statusText}</td>
+                        <td class="py-2.5 px-3 border border-slate-300 text-center">
+                            <div class="inline-block w-5 h-5 border-2 border-slate-700 rounded"></div>
+                        </td>
+                        <td class="py-2.5 px-3 border border-slate-300 text-xs text-slate-500">
+                            ${item.status === "TIDAK SETUJU" ? `<span class="italic">Ket: ${escapeHtml(item.alasan)}</span>` : ``}
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+        }
+
+        // =====================================================
+        // MANAJEMEN BANYAK FORM / SURAT ARAHAN VAKSINASI DI MENU ADMIN
+        // =====================================================
+        function renderFormTemplatesList() {
+            const grid = document.getElementById("formTemplatesGrid");
+            if (!grid) return;
+
+            // Update juga dropdown filter form di Dashboard
+            const dashFormFilter = document.getElementById("dashFormFilter");
+            if (dashFormFilter) {
+                const currentVal = dashFormFilter.value || "ACTIVE_FORM";
+                dashFormFilter.innerHTML = `
+                    <option value="ACTIVE_FORM">Form Aktif: ${escapeHtml(adminConfig.vaccineTitle.slice(0, 35))}...</option>
+                    <option value="ALL_FORMS">Semua Riwayat Form Arahan</option>
+                    ${formTemplatesDB.map(f => `<option value="${escapeHtml(f.id)}">${escapeHtml(f.vaccineTitle)}</option>`).join("")}
+                `;
+                dashFormFilter.value = currentVal;
+            }
+
+            grid.innerHTML = formTemplatesDB.map(form => {
+                const isActive = form.id === adminConfig.activeFormId;
+                const classLabel = (form.targetClasses || []).join(", ");
+
+                return `
+                    <div class="rounded-2xl p-4 border-2 transition-all flex flex-col justify-between gap-3 ${isActive ? 'bg-gradient-to-br from-emerald-50 to-amber-50 border-emerald-500 shadow-md' : 'bg-white border-amber-200 hover:border-emerald-300'}">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-1.5">
+                                ${isActive 
+                                    ? `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-600 text-amber-200 flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> SEDANG TAMPIL DI FORM</span>`
+                                    : `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">Tersimpan di Daftar</span>`
+                                }
+                                <span class="text-[10px] font-extrabold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-300">
+                                    Kelas SD: ${escapeHtml(classLabel)}
+                                </span>
+                            </div>
+                            <h4 class="font-extrabold text-xs sm:text-sm text-emerald-950 line-clamp-2">${escapeHtml(form.vaccineTitle)}</h4>
+                            <p class="text-[11px] text-slate-600 mt-1 flex items-center gap-1">
+                                <i class="fa-regular fa-calendar text-emerald-600"></i> ${escapeHtml(form.schedule)}
+                            </p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-emerald-100">
+                            ${!isActive ? `
+                                <button type="button" onclick="activateFormTemplate('${escapeHtml(form.id)}')" class="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-[11px] shadow-sm flex items-center justify-center gap-1">
+                                    <i class="fa-solid fa-eye text-amber-300"></i> Tampilkan di Form
+                                </button>
+                            ` : `
+                                <span class="flex-1 py-2 px-3 bg-amber-300/80 text-emerald-950 font-extrabold rounded-xl text-[11px] text-center">
+                                    <i class="fa-solid fa-broadcast-tower mr-1"></i> Form Aktif Saat Ini
+                                </span>
+                            `}
+                            <button type="button" onclick="loadFormTemplateToEditor('${escapeHtml(form.id)}')" class="py-2 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold rounded-xl text-[11px]">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            ${formTemplatesDB.length > 1 ? `
+                                <button type="button" onclick="deleteFormTemplate('${escapeHtml(form.id)}')" class="py-2 px-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-[11px]">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // Klik "+ Buat Form / Arahan Baru" -> Mengosongkan editor untuk membuat surat arahan baru
+        function createNewBlankFormTemplate() {
+            const newId = "FORM_" + Date.now();
+            document.getElementById("editingFormId").value = newId;
+            document.getElementById("editorFormHeaderTitle").textContent = "Buat Form / Surat Arahan Vaksinasi Baru";
+            document.getElementById("editingFormBadge").textContent = "Draft Form Baru";
+            document.getElementById("editingFormBadge").className = "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-200 text-amber-950 border border-amber-400";
+
+            document.getElementById("adminVaccineTitle").value = "";
+            document.getElementById("adminSchedule").value = "";
+            document.getElementById("adminImportanceText").value = "1. Memberikan perlindungan kesehatan dan kekebalan tubuh bagi siswa/santri SD.\n2. Sesuai surat edaran resmi Puskesmas dan UKS Sekolah.";
+            document.getElementById("adminDisclaimerText").value = "Pernyataan Tanggung Jawab: Apabila terjadi hal-hal terkait risiko kesehatan karena anak tidak divaksin atas keputusan orang tua/wali, maka pihak Kesehatan dan Sekolah tidak bertanggung jawab.";
+            document.getElementById("setAsActiveFormCheckbox").checked = true;
+
+            document.getElementById("adminVaccineTitle").focus();
+            showToast("Form Arahan Baru Siap Dibuat", "Silakan isi Judul Surat Arahan, Jadwal, dan Kelas SD Sasaran di bawah ini.", "info");
+        }
+
+        // Memilih salah satu Form di Daftar untuk langsung Ditampilkan di Form Orang Tua
+        function activateFormTemplate(formId) {
+            const found = formTemplatesDB.find(f => f.id === formId);
+            if (!found) return;
+
+            formTemplatesDB.forEach(f => f.isActive = (f.id === formId));
+            adminConfig.activeFormId = found.id;
+            adminConfig.vaccineTitle = found.vaccineTitle;
+            adminConfig.schedule = found.schedule;
+            adminConfig.targetClasses = [...(found.targetClasses || ["1", "2"])];
+            adminConfig.importanceText = found.importanceText;
+            adminConfig.disclaimerText = found.disclaimerText;
+
+            clearSelectedStudent();
+            syncAdminUIFromConfig();
+            renderFormTemplatesList();
+            renderDashboard();
+            renderAttendanceSheet();
+            syncConfigToBackend();
+
+            showToast(
+                "Form Berhasil Ditampilkan!",
+                `Form "${found.vaccineTitle}" (${formatTargetClassesLabel()}) kini aktif ditampilkan kepada orang tua.`,
+                "success"
+            );
+        }
+
+        function loadFormTemplateToEditor(formId) {
+            const found = formTemplatesDB.find(f => f.id === formId);
+            if (!found) return;
+
+            document.getElementById("editingFormId").value = found.id;
+            document.getElementById("editorFormHeaderTitle").textContent = "Edit Form Surat Arahan";
+            document.getElementById("editingFormBadge").textContent = found.id === adminConfig.activeFormId ? "Sedang Tampil di Form" : "Mode Edit";
+
+            document.getElementById("adminVaccineTitle").value = found.vaccineTitle;
+            document.getElementById("adminSchedule").value = found.schedule;
+            document.getElementById("adminImportanceText").value = found.importanceText;
+            document.getElementById("adminDisclaimerText").value = found.disclaimerText;
+            document.getElementById("setAsActiveFormCheckbox").checked = (found.id === adminConfig.activeFormId);
+
+            const checkboxes = document.querySelectorAll('input[name="targetClassCb"]');
+            checkboxes.forEach(cb => {
+                cb.checked = (found.targetClasses || []).includes(cb.value);
+            });
+
+            showToast("Form Dimuat ke Editor", `Silakan ubah data "${found.vaccineTitle}" lalu klik Simpan.`, "info");
+        }
+
+        function deleteFormTemplate(formId) {
+            if (formTemplatesDB.length <= 1) return;
+            formTemplatesDB = formTemplatesDB.filter(f => f.id !== formId);
+            if (adminConfig.activeFormId === formId) {
+                activateFormTemplate(formTemplatesDB[0].id);
+            } else {
+                renderFormTemplatesList();
+                syncConfigToBackend();
+            }
+        }
+
+        function saveAsNewFormTemplate() {
+            document.getElementById("editingFormId").value = "FORM_" + Date.now();
+            const fakeEvent = { preventDefault: () => {} };
+            saveAdminConfig(fakeEvent);
+        }
+
+        function syncAdminUIFromConfig() {
+            document.getElementById("editingFormId").value = adminConfig.activeFormId || "FORM_BIAS_01";
+            const checkboxes = document.querySelectorAll('input[name="targetClassCb"]');
+            checkboxes.forEach(cb => {
+                cb.checked = adminConfig.targetClasses.includes(cb.value);
+            });
+
+            document.getElementById("adminSchedule").value = adminConfig.schedule;
+            document.getElementById("adminVaccineTitle").value = adminConfig.vaccineTitle;
+            document.getElementById("adminImportanceText").value = adminConfig.importanceText;
+            document.getElementById("adminDisclaimerText").value = adminConfig.disclaimerText;
+            document.getElementById("adminScriptUrl").value = adminConfig.scriptUrl || DEFAULT_GAS_WEBAPP_URL;
+
+            const classText = formatTargetClassesLabel();
+            document.getElementById("active-program-badge").textContent = `Sasaran: ${classText}`;
+            document.getElementById("banner-target-class").textContent = `Sasaran: ${classText}`;
+            document.getElementById("banner-schedule").textContent = adminConfig.schedule;
+            document.getElementById("banner-title").textContent = adminConfig.vaccineTitle;
+            document.getElementById("banner-importance").textContent = adminConfig.importanceText;
+            document.getElementById("filter-hint-badge").textContent = `Aktif: ${classText}`;
+
+            const currentConsent = document.querySelector('input[name="consentStatus"]:checked')?.value || "SETUJU";
+            handleConsentChange(currentConsent);
+        }
+
+        function toggleAllTargetClasses(selectAll) {
+            const checkboxes = document.querySelectorAll('input[name="targetClassCb"]');
+            checkboxes.forEach(cb => {
+                if (selectAll) {
+                    cb.checked = ["1", "2", "3", "4", "5", "6"].includes(cb.value);
+                } else {
+                    cb.checked = (cb.value === "1");
+                }
+            });
+        }
+
+        function saveAdminConfig(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            const checkedClasses = Array.from(document.querySelectorAll('input[name="targetClassCb"]:checked')).map(cb => cb.value);
+
+            if (checkedClasses.length === 0) {
+                showToast("Pilih Minimal 1 Kelas SD", "Silakan centang minimal satu Kelas SD sasaran vaksinasi.", "error");
+                return;
+            }
+
+            const formId = document.getElementById("editingFormId").value || ("FORM_" + Date.now());
+            const title = document.getElementById("adminVaccineTitle").value.trim();
+            const schedule = document.getElementById("adminSchedule").value.trim();
+            const importance = document.getElementById("adminImportanceText").value.trim();
+            const disclaimer = document.getElementById("adminDisclaimerText").value.trim();
+            const makeActive = document.getElementById("setAsActiveFormCheckbox").checked;
+            const scriptUrl = document.getElementById("adminScriptUrl").value.trim() || DEFAULT_GAS_WEBAPP_URL;
+
+            const templateObj = {
+                id: formId,
+                vaccineTitle: title,
+                schedule: schedule,
+                targetClasses: checkedClasses,
+                importanceText: importance,
+                disclaimerText: disclaimer,
+                isActive: makeActive
+            };
+
+            const existingIdx = formTemplatesDB.findIndex(f => f.id === formId);
+            if (existingIdx !== -1) {
+                formTemplatesDB[existingIdx] = templateObj;
+            } else {
+                formTemplatesDB.unshift(templateObj);
+            }
+
+            if (makeActive) {
+                formTemplatesDB.forEach(f => f.isActive = (f.id === formId));
+                adminConfig.activeFormId = formId;
+                adminConfig.targetClasses = checkedClasses;
+                adminConfig.schedule = schedule;
+                adminConfig.vaccineTitle = title;
+                adminConfig.importanceText = importance;
+                adminConfig.disclaimerText = disclaimer;
+            }
+            adminConfig.scriptUrl = scriptUrl;
+
+            syncConfigToBackend();
+            clearSelectedStudent();
+            syncAdminUIFromConfig();
+            renderFormTemplatesList();
+            renderDashboard();
+            renderAttendanceSheet();
+
+            showToast(
+                "Form & Pengaturan Tersimpan!",
+                makeActive
+                    ? `Form "${title}" kini aktif ditampilkan untuk ${formatTargetClassesLabel()}.`
+                    : `Form "${title}" berhasil disimpan ke Daftar Form Arahan.`,
+                "success"
+            );
+        }
+
+        function syncConfigToBackend() {
+            const payloadConfig = {
+                ...adminConfig,
+                formTemplates: formTemplatesDB
+            };
+            const targetApiUrl = adminConfig.scriptUrl || DEFAULT_GAS_WEBAPP_URL;
+
+            if (typeof google !== "undefined" && google.script && google.script.run) {
+                google.script.run.saveAdminSettings(payloadConfig);
+            } else if (targetApiUrl) {
+                fetch(targetApiUrl, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "saveAdminConfig", config: payloadConfig })
+                }).catch(() => {});
+            }
+        }
+
+        function addManualStudent(e) {
+            e.preventDefault();
+            const nama = document.getElementById("newStudName").value.trim();
+            const nik = document.getElementById("newStudNik").value.trim();
+            const rawKelas = document.getElementById("newStudClass").value.trim();
+            const kelas = formatDisplayKelasSD(rawKelas);
+            const tingkat = extractGradeNumber(kelas);
+            const ayah = document.getElementById("newStudFather").value.trim();
+            const ibu = document.getElementById("newStudMother").value.trim();
+            const phone = cleanPhoneNumber(document.getElementById("newStudPhone")?.value || "");
+
+            const newStud = {
+                id: "S_MAN_" + Date.now(),
+                nama,
+                nik,
+                kelas,
+                tingkat,
+                ayah,
+                ibu,
+                hpIbu: phone,
+                hpAyah: phone,
+                hp: phone
+            };
+            studentsDB.unshift(newStud);
+
+            if (typeof google !== "undefined" && google.script && google.script.run) {
+                google.script.run.addStudentToActiveSheet(newStud);
+            }
+
+            e.target.reset();
+            renderMultiClassCheckboxes();
+            renderDashboard();
+            renderAttendanceSheet();
+            showToast("Siswa Ditambahkan", `${nama} (NIK: ${nik}, Kelas SD: ${kelas}) berhasil masuk ke database.`, "success");
+        }
+
+        // Impor CSV / Copy-Paste sesuai Header: Nama Siswa, NIK, Kelas SD, Nama Ayah, Nama Ibu
+        function importBulkPaste() {
+            const raw = document.getElementById("bulkPasteInput").value.trim();
+            if (!raw) {
+                showToast("Kolom Masih Kosong", "Silakan tempelkan data CSV atau baris dari Spreadsheet Anda.", "error");
+                return;
+            }
+
+            const rows = parseCSVToRows(raw);
+            const parsed = mapRowsToStudents(rows);
+            if (parsed.length > 0) {
+                studentsDB = parsed;
+                document.getElementById("bulkPasteInput").value = "";
+                closeDbModal();
+                renderMultiClassCheckboxes();
+                renderDashboard();
+                renderAttendanceSheet();
+                showToast("Data CSV Berhasil Dimuat!", `${parsed.length} siswa berhasil diimpor sesuai header Kelas SD & NIK.`, "success");
+            } else {
+                showToast("Format Tidak Terbaca", "Pastikan baris memiliki kolom Nama Siswa dan Kelas SD.", "error");
+            }
+        }
+
+        function quickFillFromDashboard(studentId) {
+            const student = studentsDB.find(s => s.id === studentId);
+            if (!student) return;
+            if (!isClassAllowed(student.kelas)) {
+                adminConfig.targetClasses.push(extractGradeNumber(student.kelas));
+                syncAdminUIFromConfig();
+            }
+            switchTab("parent");
+            selectStudentById(studentId);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function deleteSubmission(studentName) {
+            submissionsDB = submissionsDB.filter(s => s.nama.toLowerCase() !== studentName.toLowerCase());
+            renderDashboard();
+            renderAttendanceSheet();
+            showToast("Data Direset", `Status persetujuan ${studentName} telah direset.`, "info");
+        }
+
+        function loadSampleSubmissions() {
+            const targetStudents = studentsDB.filter(s => isClassAllowed(s.kelas));
+            targetStudents.forEach((stud, idx) => {
+                const exists = submissionsDB.some(sub =>
+                    sub.nama.toLowerCase() === stud.nama.toLowerCase() &&
+                    (!sub.formId || sub.formId === adminConfig.activeFormId)
+                );
+                if (!exists) {
+                    const isAgreed = idx % 3 !== 0;
+                    submissionsDB.push({
+                        studentId: stud.id,
+                        nama: stud.nama,
+                        nik: stud.nik || "-",
+                        kelas: stud.kelas,
+                        ayah: stud.ayah,
+                        ibu: stud.ibu,
+                        perwakilan: idx % 2 === 0 ? "Ibu" : "Ayah",
+                        telepon: "0812889900" + idx,
+                        kondisiSehat: isAgreed ? "Ya, Sehat" : "Sedang Sakit/Demam",
+                        riwayatAlergi: "Tidak Ada Alergi",
+                        status: isAgreed ? "SETUJU" : "TIDAK SETUJU",
+                        alasan: isAgreed ? "Setuju agar anak sehat dan terlindungi." : "Anak sedang demam, mohon ditunda.",
+                        pernyataanDisetujui: true,
+                        programVaksin: adminConfig.vaccineTitle,
+                        formId: adminConfig.activeFormId,
+                        waktu: "14/11/2026 09:20"
+                    });
+                }
+            });
+            renderDashboard();
+            renderAttendanceSheet();
+            switchTab("absen");
+            showToast("Simulasi Selesai", "Data simulasi telah dibuat. Silakan lihat tabel Cetak Absen Petugas!", "success");
+        }
+
+        function exportToCSV() {
+            const headers = ["No", "Nama Siswa", "NIK", "Kelas SD", "Nama Ayah", "Nama Ibu", "Setuju / Tidak Setuju Vaksin", "Alasan", "Kondisi Kesehatan", "No WA", "Program Vaksin", "Waktu"];
+            const rows = studentsDB.map((s, idx) => {
+                const sub = submissionsDB.find(item =>
+                    item.nama.toLowerCase() === s.nama.toLowerCase() &&
+                    (!item.formId || item.formId === adminConfig.activeFormId)
+                );
+                return [
+                    idx + 1,
+                    `"${s.nama}"`,
+                    `'${s.nik || '-'}`,
+                    `"${s.kelas}"`,
+                    `"${s.ayah}"`,
+                    `"${s.ibu}"`,
+                    sub ? sub.status : "BELUM MENGISI",
+                    `"${sub ? sub.alasan : '-'}"`,
+                    `"${sub ? sub.kondisiSehat : '-'}"`,
+                    `"${sub ? sub.telepon : '-'}"`,
+                    `"${adminConfig.vaccineTitle}"`,
+                    `"${sub ? sub.waktu : '-'}"`
+                ].join(",");
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `Absen_dan_Rekap_Vaksin_SD_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function openDbModal() { document.getElementById("dbModal").classList.remove("hidden"); }
+        function closeDbModal() { document.getElementById("dbModal").classList.add("hidden"); }
+
+        // Navigasi Sinkron antara Desktop & Bottom Bar HP
+        function switchTab(tabName) {
+            const views = ["parent", "dashboard", "absen", "admin"];
+            views.forEach(v => {
+                const section = document.getElementById(`view-${v}`);
+                const deskBtn = document.getElementById(`tab-${v}`);
+                const mobBtn = document.getElementById(`mob-tab-${v}`);
+                if (!section) return;
+
+                if (v === tabName) {
+                    section.classList.remove("hidden");
+                    if (deskBtn) deskBtn.className = "px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 bg-amber-400 text-emerald-950 shadow-md";
+                    if (mobBtn) mobBtn.className = "flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-emerald-950 bg-amber-300 font-extrabold text-[11px] shadow-sm transition-all";
+                } else {
+                    section.classList.add("hidden");
+                    if (deskBtn) deskBtn.className = "px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 text-emerald-100 hover:bg-emerald-800/60";
+                    if (mobBtn) mobBtn.className = "flex flex-col items-center justify-center py-1.5 px-3 rounded-xl text-slate-600 font-bold text-[11px] transition-all";
+                }
+            });
+
+            if (tabName === "dashboard") renderDashboard();
+            if (tabName === "absen") renderAttendanceSheet();
+        }
+
+        let toastTimer = null;
+        function showToast(title, message, type = "success") {
+            const toast = document.getElementById("toastNotification");
+            const icon = document.getElementById("toastIcon");
+            document.getElementById("toastTitle").textContent = title;
+            document.getElementById("toastMessage").textContent = message;
+
+            if (type === "error") {
+                icon.className = "text-rose-400 text-xl mt-0.5";
+                icon.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i>`;
+            } else {
+                icon.className = "text-amber-400 text-xl mt-0.5";
+                icon.innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+            }
+
+            toast.classList.remove("hidden");
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(hideToast, 4500);
+        }
+
+        function hideToast() {
+            document.getElementById("toastNotification").classList.add("hidden");
+        }
+
+        function escapeHtml(str) {
+            return String(str || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
